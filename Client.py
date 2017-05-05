@@ -132,7 +132,7 @@ def main():
             response = clientSocket.recv(1024)
             #Debug print out
             print(
-                "Response from server: " + response.
+                "Response from server: " + response + "."
             )
             #TODO: Add appropriate handling based on the code returned by the server
         #If exit command given
