@@ -36,7 +36,7 @@ class Server:
 
             # Accept incoming connections
             connectionSocket, addr = serverSocket.accept()
-            connectionSocket.sendto("200 OK", addr)
+            connectionSocket.send("200 OK")
 
             # While we don't have enough players for a game, loop
             while numPlayers < 2:
@@ -73,10 +73,10 @@ class Server:
                     # Store the name of the player that logged in, update his/her
                     # state, and increment our player counter
                     if player1 == None:
-                        player1 = Player(addr, name, "available", "X")
+                        player1 = Player(connectionSocket, addr, name, "available", "X")
 
                     else player2 == None:
-                        player2 = Player(addr, name, "available", "O")
+                        player2 = Player(connectionSocket, addr, name, "available", "O")
 
                 except CommandError():
                     connectionSocket.sendto("400 Error: You cannot use that command at this time.", addr)
@@ -142,22 +142,22 @@ class Server:
 class Player:
 
     # Player fields
-    conn = None
+    connectionSocket = None
     addr = None
     name = ""
     state = ""
     piece = ""
 
     def __init__(self, conn, addr, name, state, piece):
-        self.conn = conn
+        self.connectionSocket = connectionSocket
         self.addr = addr
         self.name = name
         self.state = state
         self.piece = piece
 
     # Accessor methods
-    def getConn():
-        return self.conn
+    def getConnectionSocket():
+        return self.connectionSocket
 
     def getAddr():
         return self.addr
@@ -201,22 +201,15 @@ class Game:
 
     def __init__(self, connectionSocket) {
         gameBoard = createBoard()
-        self.connectionSocket = connectionSocket
     }
 
     # Accessor methods
-    def getConnectionSocket():
-        return self.connectionSocket
-
     def getIsActive():
         return self.isActive
 
     # Mutator methods
     def setIsActive(isActive):
         self.isActive = isActive
-
-    def setConnectionSocket(connectionSocket):
-        self.connectionSocket = connectionSocket
 
     # Internal function to initialize the list that holds the game board representation
     def createBoard(self):
@@ -235,8 +228,8 @@ class Game:
                               self.gameBoard[6], self.gameBoard[7], self.gameBoard[8])
 
         # Send the formatted string to the clients
-        connectionSocket.sendto(display, player1.getAddr())
-        connectionSocket.sendto(display, player2.getAddr())
+        player1.getConn.sendto(display)
+        connectionSocket.sendto(display)
 
     # Function that checks the possible losing combinations
     # @return  Losing piece ("X" or "O"), "TIE" if tied, or None if not done yet
