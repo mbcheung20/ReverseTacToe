@@ -40,6 +40,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
                 try:
                     # Handle incoming commands
                     message = self.request.recv(1024)
+                    message = message.decode()
                     tokenized = message.split()
 
                     # Handle login requests
