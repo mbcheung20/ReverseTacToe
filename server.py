@@ -6,8 +6,13 @@ from socket import *
 
 class Server:
 
-    # Define global variables
+    # Define global variables / protocols
     SERVER_PORT = 1337
+    LOGIN = "210"
+    PLACE = "211"
+    EXIT = "212"
+    WAIT = "213"
+    START = "214"
 
     # Main function
     def main(self):
@@ -21,6 +26,7 @@ class Server:
 
         # Define variables to store player & game information
         numPlayers = 0
+        nameList = []
         player1 = None
         player2 = None
         game = None
@@ -28,44 +34,62 @@ class Server:
         # While the server is running, loop
         while True:
 
+            # Accept incoming connections
+            connectionSocket, addr = serverSocket.accept()
+            connectionSocket.sendto("200 OK", addr)
+
             # While we don't have enough players for a game, loop
             while numPlayers < 2:
 
-                # Accept & store incoming connections & addresses
-                connectionSocket, addr = serverSocket.accept()
+                # Create temporary variable
+                name = ""
 
                 try:
+                    # Handle incoming commands
+                    message = connectionSocket.recv(1024)
+                    tokenized = message.split()
+
+                    # Handle login requests
+                    if tokenized[0] == LOGIN:
+                        if message not in nameList:
+                            nameList.append(message)
+                            name = tokenized[1]
+                        else:
+                            connectionSocket.sendto
+
+                    # Handle place requests
+                    elif tokenized[0] == PLACE:
+                        raise CommandError()
+
+                    # Handle exit requests
+                    elif tokenized[0] == EXIT:
+                        connectionSocket.sendto("212 Goodbye!", messageAddr)
+                        break
+
+                    # Handle other requests
+                    else:
+                        raise BadCommandError()
+
                     # Store the name of the player that logged in, update his/her
                     # state, and increment our player counter
                     if player1 == None:
-                        player1 = Player()
-                        player1.setConn(connectionSocket)
-                        player1.setAddr(addr)
-                        player1.setName(connectionSocket.recv(1024))
-                        player1.setState("available")
+                        player1 = Player(addr, name, "available", "X")
 
-                    elif player2 == None:
-                        player2 = Player()
-                        player2.setConn(connectionSocket)
-                        player2.setAddr(addr)
-                        player2.setName(connectionSocket.recv(1024))
-                        player2.setState("available")
+                    else player2 == None:
+                        player2 = Player(addr, name, "available", "O")
 
-                    else:
-                        raise ValueError("ValueError")
+                except CommandError():
+                    connectionSocket.sendto("400 Error: You cannot use that command at this time.", addr)
 
-                except ValueError:
-                        connectionSocket.send("HTTP/1.1 400 ERROR\r\n\r\n")
-                        connectionSocket.send("This game already has two players -- please wait for the next game.")
-                        connectionSocket.close()
+                except BadCommandError():
+                    connectionSocket.sendto("400 Error: Command not recognized.", addr)
 
-                # Send a 200 OK message & increment the number of players
-                connectionSocket.sendto("HTTP/1.1 200 OK\r\n\r\n", addr)
+                # Increment the number of players
                 numPlayers += 1
 
                 # If we only have one player, tell him/her to wait
                 if numPlayers == 1:
-                    connectionSocket.sendto("Please wait a moment for another player to join", addr)
+                    connectionSocket.sendto("Please wait a moment for another player to join.", addr)
 
                 # If we have two players, create a game and update the
                 # players' states to be "busy"
@@ -75,10 +99,6 @@ class Server:
                     # Update player states to reflect that they are in a game
                     player1.setState("busy")
                     player2.setState("busy")
-
-                    # X always goes first in Tic Tac Toe
-                    player1.setPiece("X")
-                    player2.setPiece("O")
 
                     # Send playerIds to opposing players
                     connectionSocket.sendto("Opponent name: " + player2.getName(), player1.getAddr())
@@ -90,7 +110,32 @@ class Server:
             # While there is a game active, loop
             while game.getIsActive() == True:
 
-                # handle receiving of messages
+                turn = game.getCurrentTurn()
+
+                try:
+                    # Handle incoming commands
+                    command = connectionSocket.recv(1024)
+                    tokenized = command.split()
+
+                    # Handle login requests
+                    if (tokenized[0] == LOGIN):
+                        raise CommandError()
+
+                    # Handle place requests
+                    elif (tokenized[0] == PLACE):
+                        raise CommandError()
+
+                    # Handle exit requests
+                    elif (tokenized[0] == EXIT):
+                        connectionSocket.sendto(EXIT + " Goodbye!", addr)
+                        connectionSocket.close()
+
+                    # Handle other requests
+                    else:
+                        raise BadCommandError()
+
+                except CommandError():
+                    connectionSocket.sendto("400 Error: You cannot use that command at this time.", addr)
 
         serverSocket.close()
 
@@ -102,6 +147,13 @@ class Player:
     name = ""
     state = ""
     piece = ""
+
+    def __init__(self, conn, addr, name, state, piece):
+        self.conn = conn
+        self.addr = addr
+        self.name = name
+        self.state = state
+        self.piece = piece
 
     # Accessor methods
     def getConn():
@@ -143,12 +195,12 @@ class Game:
     TIE = "TIE"
 
     # Regular fields
-    board = None
+    gameBoard = None
     connectionSocket = None
     isActive = False
 
     def __init__(self, connectionSocket) {
-        board = createBoard()
+        gameBoard = createBoard()
         self.connectionSocket = connectionSocket
     }
 
@@ -166,21 +218,21 @@ class Game:
     def setConnectionSocket(connectionSocket):
         self.connectionSocket = connectionSocket
 
-    # Function to initialize the list that holds the game board representation
-    def createBoard():
-        gameBoard = []
-        for place in range(NUM_PLACES):
-            gameBoard.append(BLANK)
-        return gameBoard
+    # Internal function to initialize the list that holds the game board representation
+    def createBoard(self):
+        tempBoard = []
+        for eachPlace in range(NUM_PLACES):
+            tempBoard.append(BLANK)
+        return tempBoard
 
     # Function to send a visualization of the current game board to the clients
-    def sendBoard(gameBoard, player1, player2):
+    def sendBoard(self, player1, player2):
         display = """
         {0} {1} {2}
         {3} {4} {5}
-        {6} {7} {8}""".format(gameBoard[0], gameBoard[1], gameBoard[2],
-                              gameBoard[3], gameBoard[4], gameBoard[5],
-                              gameBoard[6], gameBoard[7], gameBoard[8])
+        {6} {7} {8}""".format(self.gameBoard[0], self.gameBoard[1], self.gameBoard[2],
+                              self.gameBoard[3], self.gameBoard[4], self.gameBoard[5],
+                              self.gameBoard[6], self.gameBoard[7], self.gameBoard[8])
 
         # Send the formatted string to the clients
         connectionSocket.sendto(display, player1.getAddr())
@@ -188,7 +240,7 @@ class Game:
 
     # Function that checks the possible losing combinations
     # @return  Losing piece ("X" or "O"), "TIE" if tied, or None if not done yet
-    def checkLoser(gameBoard):
+    def checkLoser(self):
         losingCombos = ((0, 1, 2), (0, 3, 6), (0, 4, 8),
                         (1, 4, 7), (2, 5, 8), (2, 4, 6),
                         (3, 4, 5), (6, 7, 8))
@@ -202,6 +254,13 @@ class Game:
             return TIE
 
         return None
+
+# New exceptions for invalid/bad commands
+class CommandError(Exception):
+    pass
+
+class BadCommandError(Exception):
+    pass
 
 # Create the server
 server = Server()
