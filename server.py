@@ -2,12 +2,11 @@
 #Date: 5/6/17
 #Purpose: CSE 310 Final Project Server
 
-from socket import *
+import socketserver
 
-class Server:
+class TCPHandler(socketserver.BaseRequestHandler):
 
     # Define global variables / protocols
-    SERVER_PORT = 1337
     LOGIN = "210"
     PLACE = "211"
     EXIT = "212"
@@ -15,14 +14,7 @@ class Server:
     START = "214"
 
     # Main function
-    def main(self):
-        # Initialize the server port & socket
-        serverPort = SERVER_PORT
-        serverSocket = socket(AF_INET, SOCK_STREAM)
-
-        # Bind the socket and make it listen to requests (at most 1 at a time)
-        serverSocket.bind(('', serverPort))
-        serverSocket.listen(1)
+    def handle(self):
 
         # Define variables to store player & game information
         numPlayers = 0
@@ -35,18 +27,19 @@ class Server:
         while True:
 
             # Accept incoming connections
-            connectionSocket, addr = serverSocket.accept()
-            connectionSocket.send("200 OK")
+            print("Connection accepted: " + self.client_address[1])
+            self.request.send("200 OK".encode())
 
             # While we don't have enough players for a game, loop
             while numPlayers < 2:
 
-                # Create temporary variable
+                # Create temporary variables
                 name = ""
+                loginSuccess = False
 
                 try:
                     # Handle incoming commands
-                    message = connectionSocket.recv(1024)
+                    message = self.request.recv(1024)
                     tokenized = message.split()
 
                     # Handle login requests
@@ -54,8 +47,9 @@ class Server:
                         if message not in nameList:
                             nameList.append(message)
                             name = tokenized[1]
+                            loginSuccess = True
                         else:
-                            connectionSocket.sendto
+                            self.request.send("400 Error: Name already taken.")
 
                     # Handle place requests
                     elif tokenized[0] == PLACE:
@@ -63,8 +57,7 @@ class Server:
 
                     # Handle exit requests
                     elif tokenized[0] == EXIT:
-                        connectionSocket.sendto("212 Goodbye!", messageAddr)
-                        break
+                        self.request.send("212 Goodbye: Player has exited.")
 
                     # Handle other requests
                     else:
@@ -73,39 +66,40 @@ class Server:
                     # Store the name of the player that logged in, update his/her
                     # state, and increment our player counter
                     if player1 == None:
-                        player1 = Player(connectionSocket, addr, name, "available", "X")
+                        player1 = Player(self.request, addr, name, "available", "X")
 
-                    else player2 == None:
-                        player2 = Player(connectionSocket, addr, name, "available", "O")
+                    elif player2 == None:
+                        player2 = Player(self.request, addr, name, "available", "O")
 
                 except CommandError():
-                    connectionSocket.sendto("400 Error: You cannot use that command at this time.", addr)
+                    self.request.send("400 Error: You cannot use that command at this time.")
 
                 except BadCommandError():
-                    connectionSocket.sendto("400 Error: Command not recognized.", addr)
+                    self.request.send("400 Error: Command not recognized.")
 
-                # Increment the number of players
-                numPlayers += 1
+                if loginSuccess:
+                    # Increment the number of players
+                    numPlayers += 1
 
-                # If we only have one player, tell him/her to wait
-                if numPlayers == 1:
-                    connectionSocket.sendto("Please wait a moment for another player to join.", addr)
+                    # If we only have one player, tell him/her to wait
+                    if numPlayers == 1:
+                        self.request.send("Please wait a moment for another player to join.")
 
-                # If we have two players, create a game and update the
-                # players' states to be "busy"
-                elif numPlayers == 2:
-                    game = Game(connectionSocket)
+                    # If we have two players, create a game and update the
+                    # players' states to be "busy"
+                    elif numPlayers == 2:
+                        game = Game()
 
-                    # Update player states to reflect that they are in a game
-                    player1.setState("busy")
-                    player2.setState("busy")
+                        # Update player states to reflect that they are in a game
+                        player1.setState("busy")
+                        player2.setState("busy")
 
-                    # Send playerIds to opposing players
-                    connectionSocket.sendto("Opponent name: " + player2.getName(), player1.getAddr())
-                    connectionSocket.sendto("Opponent name: " + player1.getName(), player2.getAddr())
+                        # Send playerIds to opposing players
+                        player1.getConnectionSocket().send("Opponent name: " + player2.getName())
+                        player2.getConnectionSocket().send("Opponent name: " + player1.getName())
 
-                    # Set the game as active
-                    game.setIsActive(True)
+                        # Set the game as active
+                        game.setIsActive(True)
 
             # While there is a game active, loop
             while game.getIsActive() == True:
@@ -127,7 +121,7 @@ class Server:
 
                     # Handle exit requests
                     elif (tokenized[0] == EXIT):
-                        connectionSocket.sendto(EXIT + " Goodbye!", addr)
+                        connectionSocket.send(EXIT + " Goodbye!")
                         connectionSocket.close()
 
                     # Handle other requests
@@ -135,9 +129,7 @@ class Server:
                         raise BadCommandError()
 
                 except CommandError():
-                    connectionSocket.sendto("400 Error: You cannot use that command at this time.", addr)
-
-        serverSocket.close()
+                    connectionSocket.send("400 Error: You cannot use that command at this time.")
 
 class Player:
 
@@ -148,7 +140,7 @@ class Player:
     state = ""
     piece = ""
 
-    def __init__(self, conn, addr, name, state, piece):
+    def __init__(self, connectionSocket, addr, name, state, piece):
         self.connectionSocket = connectionSocket
         self.addr = addr
         self.name = name
@@ -172,8 +164,8 @@ class Player:
         return self.piece
 
     # Mutator methods
-    def setConn(conn):
-        self.conn = conn
+    def setConnectionSocket(connectionSocket):
+        self.connectionSocket = connectionSocket
 
     def setAddr(addr):
         self.addr = addr
@@ -196,12 +188,10 @@ class Game:
 
     # Regular fields
     gameBoard = None
-    connectionSocket = None
     isActive = False
 
-    def __init__(self, connectionSocket) {
+    def __init__(self):
         gameBoard = createBoard()
-    }
 
     # Accessor methods
     def getIsActive():
@@ -228,8 +218,8 @@ class Game:
                               self.gameBoard[6], self.gameBoard[7], self.gameBoard[8])
 
         # Send the formatted string to the clients
-        player1.getConn.sendto(display)
-        connectionSocket.sendto(display)
+        player1.getConnectionSocket.send(display)
+        player2.getConnectionSocket.send(display)
 
     # Function that checks the possible losing combinations
     # @return  Losing piece ("X" or "O"), "TIE" if tied, or None if not done yet
@@ -256,4 +246,8 @@ class BadCommandError(Exception):
     pass
 
 # Create the server
-server = Server()
+if __name__ == "__main__":
+    SERVER_HOST = "localhost"
+    SERVER_PORT = 1337
+    server = socketserver.TCPServer((SERVER_HOST, SERVER_PORT), TCPHandler)
+    server.serve_forever()
