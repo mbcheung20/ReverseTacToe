@@ -50,6 +50,20 @@ def main():
             "The connection to the server specified was refused. Your first argument seems to have been invalid."
         )
         return
+    #Wait for server response
+    response = clientSocket.recv(1024)
+    #Decode response
+    response = response.decode()
+    #Check if response is 200 OK
+    if(response == "200 OK"):
+        print(
+            "Server accepted connection."
+        )
+    else:
+        print(
+            "Server did not accept connection. Closing client."
+        )
+        return
     #Continuously run the client prompt until exit
     while(True):
         #Grab user input from command line
@@ -95,7 +109,8 @@ def main():
             #If login was accepted
                 #If game is not ready to play
                     #Wait until game is ready to play
-                #If gam
+                #If game is ready to play
+                    #If it's my turn
             #TODO: If login was accepted
                 #TODO: If game is ready to play
                     #TODO:
