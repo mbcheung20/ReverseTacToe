@@ -11,6 +11,8 @@ from socket import *
 #Global variables
 PORT = 1337
 HOST = ""
+LOGIN = "210"
+
 #Main function that initiates the client
 def main():
     #Checks that number of arguments is exactly 3
@@ -40,7 +42,6 @@ def main():
         return
     #Create an INET, STREAMing socket
     clientSocket = socket(AF_INET, SOCK_STREAM)
-    '''
     #Try to bind socket to the given host and port
     try:
         clientSocket.connect((HOST, PORT))
@@ -49,7 +50,6 @@ def main():
             "The connection to the server specified was refused. Your first argument seems to have been invalid."
         )
         return
-    '''
     #Continuously run the client prompt until exit
     while(True):
         #Grab user input from command line
@@ -77,23 +77,31 @@ def main():
         #If login command given
         elif(arguments[0] == "login" and len(arguments) == 2):
             #Generate login message
-            loginMessage = "login: " + arguments[1]
+            loginMessage = LOGIN + " " + arguments[1]
             #Send login message to server
-            #clientSocket.send(loginMessagee.encode())
+            clientSocket.send(loginMessage.encode())
             #Debug print out
             print(
                 "Login message sent to server.\n"
                 "Login message was: '" + loginMessage + "'"
             )
-            '''
-            #Receive the response from the server
+            #Wait and receive response from the server
             response = clientSocket.recv(1024)
             #Debug print out
             print(
-                "Response from server: " + response.
+                "Response from server: " + response + "."
             )
-            #TODO: Add appropriate handling based on the code returned by the server
-            '''
+            #TODO
+            #If login was accepted
+                #If game is not ready to play
+                    #Wait until game is ready to play
+                #If gam
+            #TODO: If login was accepted
+                #TODO: If game is ready to play
+                    #TODO:
+                #TODO: If game is not ready yet
+            #TODO: If login was rejected
+            #TODO
         #If place command given
         elif(arguments[0] == "place" and len(arguments) == 2):
             #Try to obtain integer object using the second argument
@@ -120,7 +128,6 @@ def main():
                 "Place message sent to server.\n"
                 "Place message was: '" + placeMessage + "'"
             )
-            '''
             #Receive the response from the server
             response = clientSocket.recv(1024)
             #Debug print out
@@ -128,7 +135,6 @@ def main():
                 "Response from server: " + response.
             )
             #TODO: Add appropriate handling based on the code returned by the server
-            '''
         #If exit command given
         elif(arguments[0] == "exit" and len(arguments) == 1):
             #Generate exit message
