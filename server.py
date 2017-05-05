@@ -27,7 +27,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
         while True:
 
             # Accept incoming connections
-            print("Connection accepted: " + self.client_address[1])
+            print("Connection accepted: " + self.client_address[0])
             self.request.send("200 OK".encode())
 
             # While we don't have enough players for a game, loop
@@ -49,7 +49,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
                             name = tokenized[1]
                             loginSuccess = True
                         else:
-                            self.request.send("400 Error: Name already taken.")
+                            self.request.send("400 Error: Name already taken.".encode())
 
                     # Handle place requests
                     elif tokenized[0] == PLACE:
@@ -57,7 +57,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
                     # Handle exit requests
                     elif tokenized[0] == EXIT:
-                        self.request.send("212 Goodbye: Player has exited.")
+                        self.request.send("212 Goodbye: Player has exited.".encode())
 
                     # Handle other requests
                     else:
@@ -72,10 +72,10 @@ class TCPHandler(socketserver.BaseRequestHandler):
                         player2 = Player(self.request, addr, name, "available", "O")
 
                 except CommandError():
-                    self.request.send("400 Error: You cannot use that command at this time.")
+                    self.request.send("400 Error: You cannot use that command at this time.".encode())
 
                 except BadCommandError():
-                    self.request.send("400 Error: Command not recognized.")
+                    self.request.send("400 Error: Command not recognized.".encode())
 
                 if loginSuccess:
                     # Increment the number of players
@@ -83,7 +83,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
                     # If we only have one player, tell him/her to wait
                     if numPlayers == 1:
-                        self.request.send("Please wait a moment for another player to join.")
+                        self.request.send("Please wait a moment for another player to join.".encode())
 
                     # If we have two players, create a game and update the
                     # players' states to be "busy"
@@ -95,8 +95,10 @@ class TCPHandler(socketserver.BaseRequestHandler):
                         player2.setState("busy")
 
                         # Send playerIds to opposing players
-                        player1.getConnectionSocket().send("Opponent name: " + player2.getName())
-                        player2.getConnectionSocket().send("Opponent name: " + player1.getName())
+                        oppPlayer1 = "Opponent name: " + player2.getName()
+                        oppPlayer2 = "Opponent name: " + player1.getName()
+                        player1.getConnectionSocket().send(oppPlayer1.encode())
+                        player2.getConnectionSocket().send(oppPlayer2.encode())
 
                         # Set the game as active
                         game.setIsActive(True)
@@ -121,7 +123,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
                     # Handle exit requests
                     elif (tokenized[0] == EXIT):
-                        connectionSocket.send(EXIT + " Goodbye!")
+                        connectionSocket.send(EXIT + " Goodbye!".encode())
                         connectionSocket.close()
 
                     # Handle other requests
@@ -129,7 +131,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
                         raise BadCommandError()
 
                 except CommandError():
-                    connectionSocket.send("400 Error: You cannot use that command at this time.")
+                    connectionSocket.send("400 Error: You cannot use that command at this time.".encode())
 
 class Player:
 
@@ -218,8 +220,8 @@ class Game:
                               self.gameBoard[6], self.gameBoard[7], self.gameBoard[8])
 
         # Send the formatted string to the clients
-        player1.getConnectionSocket.send(display)
-        player2.getConnectionSocket.send(display)
+        player1.getConnectionSocket.send(display.encode())
+        player2.getConnectionSocket.send(display.encode())
 
     # Function that checks the possible losing combinations
     # @return  Losing piece ("X" or "O"), "TIE" if tied, or None if not done yet
