@@ -138,12 +138,36 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
         # While there is a game active, loop
         while game.getIsActive() == True:
 
-            # Update wait variable
-            playerWaiting = True
-
             # Send the players the visualization of the board
             boardDisplay = game.displayBoard()
             self.request.send((DISPLAY + " DISPLAY: " + boardDisplay).encode())
+
+            # Check to see if the game is over
+            gameLoser = game.checkLoser()
+
+            # If the game was a tie, notify the players and restart the game
+            if gameLoser == "TIE":
+                self.request.send((TIED + " TIED").encode())
+                game.createBoard()
+                self.request.send((START + " START").encode())
+                newDisplay = game.displayBoard()
+                self.request.send((DISPLAY + " DISPLAY: " + boardDisplay).encode())
+
+            # If there is a winner, notify both players and restart the game
+            elif gameLoser == "X" or gameLoser == "O":
+                playerPiece = player.getPiece()
+                if gameLoser == playerPiece:
+                    self.request.send((LOST + " LOST").encode())
+                else:
+                    self.request.send((WON + " WON").encode())
+                    game.createBoard()
+
+                self.request.send((START + " START").encode())
+                newDisplay = game.displayBoard()
+                self.request.send((DISPLAY + " DISPLAY: " + boardDisplay).encode())
+
+            # Update wait variable
+            playerWaiting = True
 
             # Check which player's turn it is and message them accordingly
             turn = game.getCurrentTurn()
@@ -166,7 +190,14 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
                         # Handle place requests
                         elif (tokenized[0] == PLACE):
-                            raise CommandError()
+                            attemptMove = game.updateBoard(player, tokenized[1])
+                            if attemptMove == -1:
+                                self.request.send("400 ERROR".encode())
+                            else:
+                                self.request.send("200 OK".encode())
+                                player.setIsTurn(False)
+                                commandSuccess = True
+                                playerWaiting = False
 
                         # Handle exit requests
                         elif (tokenized[0] == EXIT):
@@ -176,8 +207,12 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                         else:
                             self.request.send("400 ERROR".encode())
 
+                    except IndexError:
+                        pass
+
             else:
                 self.request.send((WAIT + " WAIT").encode())
+                player.setIsTurn(True)
                 while playerWaiting == True:
                     pass
 
@@ -277,7 +312,7 @@ class Game:
         self.gameBoard = tempBoard
 
     # Function to send a visualization of the current game board to the clients
-    def displayBoard(self, player1, player2):
+    def displayBoard(self):
         display = """
         {0} {1} {2}
         {3} {4} {5}
@@ -286,6 +321,15 @@ class Game:
                               self.gameBoard[6], self.gameBoard[7], self.gameBoard[8])
 
         return display
+
+    # Function to update the board with the player's choice
+    def updateBoard(self, player, place):
+        intPlace = int(place)
+        if self.gameBoard[intPlace - 1] == self.BLANK:
+            self.gameBoard[intPlace - 1] = player.getPiece()
+            return 0
+        else:
+            return -1
 
     # Function to check whose turn it is to move
     def getCurrentTurn(self):
@@ -305,8 +349,8 @@ class Game:
                 if combo[0] != BLANK:
                     return combo[0]
 
-        if BLANK not in losingConvo:
-            return TIE
+        if self.BLANK not in self.gameBoard:
+            return self.TIE
 
         return None
 
