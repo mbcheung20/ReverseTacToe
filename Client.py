@@ -12,6 +12,7 @@ from socket import *
 #Global variables
 PORT = 1337
 
+#Protocols
 OK = "200"
 LOGIN = "210"
 PLACE = "211"
@@ -117,6 +118,10 @@ def main():
                     tokenized = response.split()
                     #Server says game is ready
                     if(tokenized[0] == START):
+                        #Wait for the player name from the server
+                        name = clientSocket.recv(1024).decode()
+                        #Notify the player of the opponent's name
+                        print("Your opponent's login ID is: " + name)
                         #Wait for the board state from the server
                         board = clientSocket.recv(1024).decode()
                         #Notify the player that the game is ready and print out board
@@ -152,6 +157,47 @@ def main():
                             elif(tokenized[0] == LEFT):
                                 print("Your opponent left the game. Sorry about that.")
                                 continue
+                #If game is ready to play
+                if(tokenized[0] == START):
+                    #Wait for the player name from the server
+                    name = clientSocket.recv(1024).decode()
+                    #Notify the player of the opponent's name
+                    print("Your opponent's login ID is: " + name)
+                    #Wait for the board state from the server
+                    board = clientSocket.recv(1024).decode()
+                    #Notify the player that the game is ready and print out board
+                    print("Game is starting.")
+                    print(board)
+                    #Wait for whose turn it is
+                    response = clientSocket.recv(1024).decode()
+                    #Debug print out
+                    print("Response from server: " + response)
+                    #Tokenize
+                    tokenized = response.split()
+                    #Server says it is my turn
+                    if(tokenized[0] == READY):
+                        print("It is your turn. Make your move.")
+                        continue
+                    #Server says it is opponent's turn
+                    elif(tokenized[0] == WAIT):
+                        print("Opponent is making his/her move.")
+                        #Wait for the updated board state
+                        board = clientSocket.recv(1024).decode()
+                        #Print out updated board state
+                        print(board)
+                        #Wait for my turn
+                        response = clientSocket.recv(1024).decode()
+                        #Debug print out
+                        print("Response from server: " + response)
+                        #Tokenize
+                        tokenized = response.split()
+                        #Server says it is my turn
+                        if(tokenized[0] == READY):
+                            print("It is your turn make your move.")
+                            continue
+                        elif(tokenized[0] == LEFT):
+                            print("Your opponent left the game. Sorry about that.")
+                            continue
             #If login was not accepted
             if(tokenized[0] == ERROR):
                 #Inform the user that login was denied
@@ -190,7 +236,7 @@ def main():
                 print("Invalid move. Spot on the board is already taken. Make another move.")
                 continue
             #If move was accepted
-        elif(tokenized[0] == OK):
+            elif(tokenized[0] == OK):
                 #Wait for the updated board state
                 board = clientSocket.recv(1024).decode()
                 #Display board state
