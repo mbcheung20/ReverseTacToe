@@ -78,6 +78,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                             nameList.append(message)
                             name = tokenized[1]
                             loginSuccess = True
+                            sleep(0.1)
                             self.request.send("200 OK".encode())
                         else:
                             self.request.send("400 ERROR".encode())
@@ -109,6 +110,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
             # If we only have one player, tell him/her to wait
             if player.getPiece() == "X":
+                sleep(0.2)
                 self.request.send((WAIT + " WAIT").encode())
                 while playerWaiting == True:
                     pass
@@ -124,8 +126,9 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
             # Update player state to reflect that they are in a game
             player.setState("busy")
 
-            sleep(0.2)
+
             # Let the players know that the game is about to start
+            sleep(0.2)
             self.request.send((START + " START").encode())
 
             # Send playerIds to opposing players
@@ -144,7 +147,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
             # Send the players the visualization of the board
             boardDisplay = game.displayBoard()
             sleep(0.2)
-            self.request.send((DISPLAY + " DISPLAY: " + boardDisplay).encode())
+            self.request.send((DISPLAY + " DISPLAY " + boardDisplay).encode())
 
             # Check to see if the game is over
             gameLoser = game.checkLoser()
@@ -155,7 +158,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                 game.createBoard()
                 self.request.send((START + " START").encode())
                 newDisplay = game.displayBoard()
-                self.request.send((DISPLAY + " DISPLAY: " + boardDisplay).encode())
+                self.request.send((DISPLAY + " DISPLAY " + boardDisplay).encode())
 
             # If there is a winner, notify both players and restart the game
             elif gameLoser == "X" or gameLoser == "O":
@@ -166,9 +169,11 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                     self.request.send((WON + " WON").encode())
                     game.createBoard()
 
+                sleep(0.2)
                 self.request.send((START + " START").encode())
                 newDisplay = game.displayBoard()
-                self.request.send((DISPLAY + " DISPLAY: " + boardDisplay).encode())
+                sleep(0.2)
+                self.request.send((DISPLAY + " DISPLAY " + boardDisplay).encode())
 
             # Update wait variable
             playerWaiting = True
@@ -196,6 +201,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                         elif (tokenized[0] == PLACE):
                             attemptMove = game.updateBoard(player, tokenized[1])
                             if attemptMove == -1:
+                                sleep(0.2)
                                 self.request.send("400 ERROR".encode())
                             else:
                                 sleep(0.2)
