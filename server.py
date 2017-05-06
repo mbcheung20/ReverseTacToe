@@ -3,136 +3,164 @@
 #Purpose: CSE 310 Final Project Server
 
 import socketserver
+import threading
 
-class TCPHandler(socketserver.BaseRequestHandler):
+# Define protocols
+global LOGIN
+LOGIN = "210"
+global PLACE
+PLACE = "211"
+global EXIT
+EXIT = "212"
+global WAIT
+WAIT = "213"
+global START
+START = "214"
+global READY
+READY = "215"
+global WON
+WON = "216"
+global LOST
+LOST = "217"
+global TIED
+TIED = "218"
+global NAME
+NAME = "219"
 
-    # Define global variables / protocols
-    global LOGIN
-    LOGIN = "210"
-    global PLACE
-    PLACE = "211"
-    global EXIT
-    EXIT = "212"
-    global WAIT
-    WAIT = "213"
-    global START
-    START = "214"
+# Define global variables
+global playerList
+playerList = []
+
+global nameList
+nameList = []
+
+playerWaiting = True
+game = None
+
+class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
     # Main function
     def handle(self):
 
-        # Define variables to store player & game information
-        numPlayers = 0
-        nameList = []
-        player1 = None
-        player2 = None
-        game = None
+        global playerWaiting
+        global game
 
-        # While the server is running, loop
-        while True:
+        # Accept incoming connections
+        print("Connection accepted: " + self.client_address[0])
+        self.request.send("200 OK".encode())
 
-            # Accept incoming connections
-            print("Connection accepted: " + self.client_address[0])
-            self.request.send("200 OK".encode())
+        # If we don't have two players, attempt to add them to the game
+        if len(playerList) < 2:
 
-            # While we don't have enough players for a game, loop
-            while numPlayers < 2:
+            # Create temporary variables
+            name = ""
+            loginSuccess = False
+            player = None
 
-                # Create temporary variables
-                name = ""
-                loginSuccess = False
-
-                # Handle incoming commands
-                message = self.request.recv(1024)
-                message = message.decode()
-                print(message)
-                tokenized = message.split()
-
-                # Handle login requests
-                if tokenized[0] == LOGIN:
-                    if message not in nameList:
-                        nameList.append(message)
-                        name = tokenized[1]
-                        loginSuccess = True
-                        self.request.send("200 OK".encode())
-                    else:
-                        self.request.send("400 Error: Name already taken.".encode())
-
-                # Handle place requests
-                elif tokenized[0] == PLACE:
-                    self.request.send("400 Error: You cannot use that command at this time.".encode())
-
-                # Handle exit requests
-                elif tokenized[0] == EXIT:
-                    self.request.send(EXIT + " EXIT: Player has exited.".encode())
-
-                # Handle other requests
-                else:
-                    self.request.send("400 Error: Command not recognized.".encode())
-
-                if loginSuccess:
-                    # Store the name of the player that logged in, update his/her
-                    # state, and increment our player counter
-                    if player1 == None:
-                        player1 = Player(self.request, self.client_address, name, "available", "X")
-
-                    elif player2 == None:
-                        player2 = Player(self.request, self.client_address, name, "available", "O")
-
-                # Increment the number of players
-                numPlayers += 1
-
-                # If we only have one player, tell him/her to wait
-                if numPlayers == 1:
-                    self.request.send("Please wait a moment for another player to join.".encode())
-
-                # If we have two players, create a game and update the
-                # players' states to be "busy"
-                elif numPlayers == 2:
-                    game = Game()
-
-                    # Update player states to reflect that they are in a game
-                    player1.setState("busy")
-                    player2.setState("busy")
-
-                    # Send playerIds to opposing players
-                    oppPlayer1 = "Opponent name: " + player2.getName()
-                    oppPlayer2 = "Opponent name: " + player1.getName()
-                    player1.getConnectionSocket().send(oppPlayer1.encode())
-                    player2.getConnectionSocket().send(oppPlayer2.encode())
-
-                    # Set the game as active
-                    game.setIsActive(True)
-
-            # While there is a game active, loop
-            while game.getIsActive() == True:
-
-                turn = game.getCurrentTurn()
+            while loginSuccess == False:
 
                 try:
                     # Handle incoming commands
-                    command = connectionSocket.recv(1024)
-                    tokenized = command.split()
+                    message = self.request.recv(1024)
+                    message = message.decode()
+                    tokenized = message.split()
 
                     # Handle login requests
-                    if (tokenized[0] == LOGIN):
-                        raise CommandError()
+                    if tokenized[0] == LOGIN:
+
+                        if message not in nameList:
+                            nameList.append(message)
+                            name = tokenized[1]
+                            loginSuccess = True
+                            self.request.send("200 OK".encode())
+                        else:
+                            self.request.send("400 ERROR".encode())
 
                     # Handle place requests
-                    elif (tokenized[0] == PLACE):
-                        raise CommandError()
+                    elif tokenized[0] == PLACE:
+                        self.request.send("400 ERROR".encode())
 
                     # Handle exit requests
-                    elif (tokenized[0] == EXIT):
-                        connectionSocket.send(EXIT + " Goodbye!".encode())
-                        connectionSocket.close()
+                    elif tokenized[0] == EXIT:
+                        self.request.send((EXIT + " EXIT").encode())
 
                     # Handle other requests
                     else:
-                        raise BadCommandError()
+                        self.request.send("400 ERROR".encode())
 
-                except CommandError():
-                    connectionSocket.send("400 Error: You cannot use that command at this time.".encode())
+                except IndexError:
+                    pass
+
+            # Store the name of the player that logged in, update his/her
+            # state, and increment our player counter
+            if not playerList:
+                player = Player(self.request, self.client_address, name, "available", "X", True)
+
+            else:
+                player = Player(self.request, self.client_address, name, "available", "O", False)
+
+            playerList.append(player)
+
+            # If we only have one player, tell him/her to wait
+            if player.getPiece() == "X":
+                self.request.send((WAIT + " WAIT").encode())
+                while playerWaiting == True:
+                    pass
+
+            elif player.getPiece() == "O":
+                game = Game()
+                game.createBoard()
+                playerWaiting = False
+
+            # Update player state to reflect that they are in a game
+            player.setState("busy")
+            game.addPlayer(player)
+
+            # Send playerIds to opposing players
+            for gamePlayer in game.getPlayerList():
+                if gamePlayer != player:
+                    opposingPlayer = NAME + " NAME: " + gamePlayer.getName()
+                    self.request.send(opposingPlayer.encode())
+
+            # Set the game as active
+            game.setIsActive(True)
+
+        # While there is a game active, loop
+        while game.getIsActive() == True:
+
+            print("GOT HERE")
+            break
+
+            turn = game.getCurrentTurn()
+
+            try:
+                # Handle incoming commands
+                command = connectionSocket.recv(1024)
+                command = command.decode()
+                tokenized = command.split()
+
+                # Handle login requests
+                if (tokenized[0] == LOGIN):
+                    raise CommandError()
+
+                # Handle place requests
+                elif (tokenized[0] == PLACE):
+                    raise CommandError()
+
+                # Handle exit requests
+                elif (tokenized[0] == EXIT):
+                    connectionSocket.send((EXIT + " EXIT").encode())
+                    connectionSocket.close()
+
+                # Handle other requests
+                else:
+                    raise BadCommandError()
+
+            except CommandError():
+                connectionSocket.send("400 Error: You cannot use that command at this time.".encode())
+
+class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    pass
 
 class Player:
 
@@ -142,45 +170,53 @@ class Player:
     name = ""
     state = ""
     piece = ""
+    isTurn = False
 
-    def __init__(self, connectionSocket, addr, name, state, piece):
+    def __init__(self, connectionSocket, addr, name, state, piece, isTurn):
         self.connectionSocket = connectionSocket
         self.addr = addr
         self.name = name
         self.state = state
         self.piece = piece
+        self.isTurn = isTurn
 
     # Accessor methods
-    def getConnectionSocket():
+    def getConnectionSocket(self):
         return self.connectionSocket
 
-    def getAddr():
+    def getAddr(self):
         return self.addr
 
-    def getName():
+    def getName(self):
         return self.name
 
-    def getState():
+    def getState(self):
         return self.state
 
-    def getPiece():
+    def getPiece(self):
         return self.piece
 
+    def getIsTurn(self):
+        return self.isTurn
+
     # Mutator methods
-    def setConnectionSocket(connectionSocket):
+    def setConnectionSocket(self, connectionSocket):
         self.connectionSocket = connectionSocket
 
-    def setAddr(addr):
+    def setAddr(self, addr):
         self.addr = addr
 
-    def setName(name):
+    def setName(self, name):
         self.name = name
 
-    def setState(state):
+    def setState(self, state):
         self.state = state
 
-    def setPiece(piece):
+    def setPiece(self, piece):
         self.piece = piece
+
+    def setIsTurn(self, isTurn):
+        self.isTurn = isTurn
 
 class Game:
 
@@ -190,26 +226,33 @@ class Game:
     TIE = "TIE"
 
     # Regular fields
-    gameBoard = None
+    playerList = []
+    gameBoard = []
     isActive = False
 
-    def __init__(self):
-        gameBoard = createBoard()
+    #def __init__(self):
+        #gameBoard = createBoard(self)
 
     # Accessor methods
-    def getIsActive():
+    def getPlayerList(self):
+        return self.playerList
+
+    def getIsActive(self):
         return self.isActive
 
     # Mutator methods
-    def setIsActive(isActive):
+    def setIsActive(self, isActive):
         self.isActive = isActive
+
+    def addPlayer(self, player):
+        self.playerList.append(player)
 
     # Internal function to initialize the list that holds the game board representation
     def createBoard(self):
         tempBoard = []
-        for eachPlace in range(NUM_PLACES):
-            tempBoard.append(BLANK)
-        return tempBoard
+        for eachPlace in range(self.NUM_PLACES):
+            tempBoard.append(self.BLANK)
+        self.gameBoard = tempBoard
 
     # Function to send a visualization of the current game board to the clients
     def sendBoard(self, player1, player2):
@@ -245,5 +288,6 @@ class Game:
 if __name__ == "__main__":
     SERVER_HOST = "localhost"
     SERVER_PORT = 1337
-    server = socketserver.TCPServer((SERVER_HOST, SERVER_PORT), TCPHandler)
-    server.serve_forever()
+    server = ThreadedTCPServer((SERVER_HOST, SERVER_PORT), ThreadedTCPHandler)
+    server_thread = threading.Thread(target=server.serve_forever)
+    server_thread.start()
