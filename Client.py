@@ -25,6 +25,7 @@ LOST = "217"
 TIED = "218"
 NAME = "219"
 LEFT = "220"
+DISPLAY = "221"
 ERROR = "400"
 
 #Main function that initiates the client
@@ -119,14 +120,27 @@ def main():
                     #Server says game is ready
                     if(tokenized[0] == START):
                         #Wait for the player name from the server
-                        name = clientSocket.recv(1024).decode()
-                        #Notify the player of the opponent's name
-                        print("Your opponent's login ID is: " + name)
+                        response = clientSocket.recv(1024).decode()
+                        #Debug print out
+                        print("Response from server: " + response)
+                        #Tokenize
+                        tokenized = response.split()
+                        #Server gave me the name
+                        if(tokenized[0] == NAME):
+                            #Notify the player of the opponent's name
+                            print("Your opponent's login ID is: " + tokenized[1])
                         #Wait for the board state from the server
-                        board = clientSocket.recv(1024).decode()
-                        #Notify the player that the game is ready and print out board
-                        print("Game is starting.")
-                        print(board)
+                        response = clientSocket.recv(1024).decode()
+                        #Debug print out
+                        print("Response from server: " + response)
+                        #Tokenize
+                        tokenized = response.split()
+                        #Server gave me the display
+                        if(tokenized[0] == DISPLAY):
+                            #Notify the player that the game is ready and print out board
+                            print("Game is starting.")
+                            #Print out the display
+                            print(tokenized[1])
                         #Wait for whose turn it is
                         response = clientSocket.recv(1024).decode()
                         #Debug print out
@@ -160,14 +174,27 @@ def main():
                 #If game is ready to play
                 if(tokenized[0] == START):
                     #Wait for the player name from the server
-                    name = clientSocket.recv(1024).decode()
-                    #Notify the player of the opponent's name
-                    print("Your opponent's login ID is: " + name)
+                    response = clientSocket.recv(1024).decode()
+                    #Debug print out
+                    print("Response from server: " + response)
+                    #Tokenize
+                    tokenized = response.split()
+                    #Server gave me the name
+                    if(tokenized[0] == NAME):
+                        #Notify the player of the opponent's name
+                        print("Your opponent's login ID is: " + tokenized[1])
                     #Wait for the board state from the server
-                    board = clientSocket.recv(1024).decode()
-                    #Notify the player that the game is ready and print out board
-                    print("Game is starting.")
-                    print(board)
+                    response = clientSocket.recv(1024).decode()
+                    #Debug print out
+                    print("Response from server: " + response)
+                    #Tokenize
+                    tokenized = response.split()
+                    #Server gave me the display
+                    if(tokenized[0] == DISPLAY):
+                        #Notify the player that the game is ready and print out board
+                        print("Game is starting.")
+                        #Print out the display
+                        print(tokenized[1])
                     #Wait for whose turn it is
                     response = clientSocket.recv(1024).decode()
                     #Debug print out
