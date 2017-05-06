@@ -5,6 +5,20 @@
 import socketserver
 import threading
 
+# Define protocols
+LOGIN = "210"
+PLACE = "211"
+EXIT = "212"
+WAIT = "213"
+START = "214"
+READY = "215"
+WON = "216"
+LOST = "217"
+TIED = "218"
+NAME = "219"
+LEFT = "220"
+DISPLAY = "221"
+
 # Define global variables
 playerList = []
 nameList = []
@@ -13,20 +27,22 @@ game = None
 
 class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
-    # Define protocols
-    LOGIN = "210"
-    PLACE = "211"
-    EXIT = "212"
-    WAIT = "213"
-    START = "214"
-    READY = "215"
-    WON = "216"
-    LOST = "217"
-    TIED = "218"
-    NAME = "219"
-
     # Main function
     def handle(self):
+
+        # Reference global protocols
+        global LOGIN
+        global PLACE
+        global EXIT
+        global WAIT
+        global START
+        global READY
+        global WON
+        global LOST
+        global TIED
+        global NAME
+        global LEFT
+        global DISPLAY
 
         # Reference the global variables that need to be shared
         global nameList
@@ -107,6 +123,9 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
             # Update player state to reflect that they are in a game
             player.setState("busy")
 
+            # Let the players know that the game is about to start
+            self.request.send((START + " START").encode())
+
             # Send playerIds to opposing players
             for gamePlayer in game.getPlayerList():
                 if gamePlayer != player:
@@ -119,36 +138,48 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
         # While there is a game active, loop
         while game.getIsActive() == True:
 
-            print("GOT HERE")
-            break
+            # Update wait variable
+            playerWaiting = True
 
+            # Send the players the visualization of the board
+            boardDisplay = game.displayBoard()
+            self.request.send((DISPLAY + " DISPLAY: " + boardDisplay).encode())
+
+            # Check which player's turn it is and message them accordingly
             turn = game.getCurrentTurn()
+            if turn == player.getPiece():
+                self.request.send((READY + " READY").encode())
 
-            try:
-                # Handle incoming commands
-                command = connectionSocket.recv(1024)
-                command = command.decode()
-                tokenized = command.split()
+                # Loop variable
+                commandSuccess = False
+                while not commandSuccess:
 
-                # Handle login requests
-                if (tokenized[0] == LOGIN):
-                    raise CommandError()
+                    try:
+                        # Handle incoming commands
+                        command = self.request.recv(1024)
+                        command = command.decode()
+                        tokenized = command.split()
 
-                # Handle place requests
-                elif (tokenized[0] == PLACE):
-                    raise CommandError()
+                        # Handle login requests
+                        if (tokenized[0] == LOGIN):
+                            self.request.send("400 ERROR".encode())
 
-                # Handle exit requests
-                elif (tokenized[0] == EXIT):
-                    connectionSocket.send((EXIT + " EXIT").encode())
-                    connectionSocket.close()
+                        # Handle place requests
+                        elif (tokenized[0] == PLACE):
+                            raise CommandError()
 
-                # Handle other requests
-                else:
-                    raise BadCommandError()
+                        # Handle exit requests
+                        elif (tokenized[0] == EXIT):
+                            self.request.send((EXIT + " EXIT").encode())        # DO WEIRD THINGS HERE
 
-            except CommandError():
-                connectionSocket.send("400 Error: You cannot use that command at this time.".encode())
+                        # Handle other requests
+                        else:
+                            self.request.send("400 ERROR".encode())
+
+            else:
+                self.request.send((WAIT + " WAIT").encode())
+                while playerWaiting == True:
+                    pass
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
@@ -246,7 +277,7 @@ class Game:
         self.gameBoard = tempBoard
 
     # Function to send a visualization of the current game board to the clients
-    def sendBoard(self, player1, player2):
+    def displayBoard(self, player1, player2):
         display = """
         {0} {1} {2}
         {3} {4} {5}
@@ -254,7 +285,7 @@ class Game:
                               self.gameBoard[3], self.gameBoard[4], self.gameBoard[5],
                               self.gameBoard[6], self.gameBoard[7], self.gameBoard[8])
 
-        return display.encode()
+        return display
 
     # Function to check whose turn it is to move
     def getCurrentTurn(self):
