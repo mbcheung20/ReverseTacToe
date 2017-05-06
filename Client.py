@@ -225,7 +225,25 @@ def main():
                             continue
                         elif(tokenized[0] == LEFT):
                             print("Your opponent left the game. Sorry about that.")
-                            continue
+                            response = clientSocket.recv(1024).decode()
+                            tokenized = response.split()
+                            if(tokenized[0] == START):
+                                response =clientSocket.recv(1024).decode()
+                                tokenized = response.split()
+                                if(tokenized[0] == NAME):
+                                    print(tokenized[1])
+                                    response = clientSocket(1024).decode()
+                                    tokenized = response.split(' ', 2)
+                                    if(tokenized[0] == BOARD):
+                                        print(tokenized[2])
+                                        response = clientSocket(1024).decode()
+                                        tokenized = response.split(' ', 2)
+                                        if(tokenized [0] == READY):
+                                            continue
+                            #START
+                                #NAME
+                                    #Board
+                                        #READY
             #If login was not accepted
             if(tokenized[0] == ERROR):
                 if(loggedIn):
@@ -348,6 +366,7 @@ def main():
                                 elif(tokenized[0] == LEFT):
                                     print("Your opponent left the game. Sorry about that.")
                                     continue
+
         #If exit command given
         elif(arguments[0] == "exit" and len(arguments) == 1):
             #Generate exit message
