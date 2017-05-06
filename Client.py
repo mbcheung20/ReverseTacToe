@@ -8,6 +8,7 @@
 #Imports
 import sys
 from socket import *
+from time import sleep
 
 #Global variables
 PORT = 1337
@@ -90,7 +91,7 @@ def main():
                   "whenever you want. The only way to use this command is to input 'exit'.")
         #If login command given
         elif(arguments[0] == "login" and len(arguments) == 2):
-            #Generate login message
+            #Generate login message.
             loginMessage = LOGIN + " " + arguments[1]
             #Send login message to server
             clientSocket.send(loginMessage.encode())
@@ -132,6 +133,7 @@ def main():
                         if(tokenized[0] == NAME):
                             #Notify the player of the opponent's name
                             print("Your opponent's login ID is: " + tokenized[1])
+                            sleep(0.1)
                         #Wait for the board state from the server
                         response = clientSocket.recv(1024).decode()
                         #Debug print out
@@ -144,6 +146,7 @@ def main():
                             print("Game is starting.")
                             #Print out the display
                             print(tokenized[1])
+                            sleep(0.1)
                         #Wait for whose turn it is
                         response = clientSocket.recv(1024).decode()
                         #Debug print out
@@ -175,7 +178,7 @@ def main():
                                 print("Your opponent left the game. Sorry about that.")
                                 continue
                 #If game is ready to play
-                if(tokenized[0] == START):
+                elif(tokenized[0] == START):
                     #Wait for the player name from the server
                     response = clientSocket.recv(1024).decode()
                     #Debug print out
@@ -185,11 +188,10 @@ def main():
                     #Server gave me the name
                     if(tokenized[0] == NAME):
                         #Notify the player of the opponent's name
-                        print("Your opponent's login ID is: " + tokenized[1])
+                        print("Your opponent's login ID is: " + tokenized[2])
+                        sleep(0.1)
                     #Wait for the board state from the server
                     response = clientSocket.recv(1024).decode()
-                    #Debug print out
-                    print("Response from server: " + response)
                     #Tokenize
                     tokenized = response.split()
                     #Server gave me the display
@@ -198,6 +200,7 @@ def main():
                         print("Game is starting.")
                         #Print out the display
                         print(tokenized[1])
+                        sleep(0.1)
                     #Wait for whose turn it is
                     response = clientSocket.recv(1024).decode()
                     #Debug print out

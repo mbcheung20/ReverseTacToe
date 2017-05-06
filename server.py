@@ -4,6 +4,7 @@
 
 import socketserver
 import threading
+from time import sleep
 
 # Define protocols
 LOGIN = "210"
@@ -123,6 +124,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
             # Update player state to reflect that they are in a game
             player.setState("busy")
 
+            sleep(0.2)
             # Let the players know that the game is about to start
             self.request.send((START + " START").encode())
 
@@ -130,6 +132,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
             for gamePlayer in game.getPlayerList():
                 if gamePlayer != player:
                     opposingPlayer = NAME + " NAME: " + gamePlayer.getName()
+                    sleep(0.2)
                     self.request.send(opposingPlayer.encode())
 
             # Set the game as active
@@ -140,6 +143,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
             # Send the players the visualization of the board
             boardDisplay = game.displayBoard()
+            sleep(0.2)
             self.request.send((DISPLAY + " DISPLAY: " + boardDisplay).encode())
 
             # Check to see if the game is over
@@ -172,6 +176,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
             # Check which player's turn it is and message them accordingly
             turn = game.getCurrentTurn()
             if turn == player.getPiece():
+                sleep(0.2)
                 self.request.send((READY + " READY").encode())
 
                 # Loop variable
@@ -194,6 +199,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                             if attemptMove == -1:
                                 self.request.send("400 ERROR".encode())
                             else:
+                                sleep(0.2)
                                 self.request.send("200 OK".encode())
                                 player.setIsTurn(False)
                                 commandSuccess = True
@@ -211,6 +217,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                         pass
 
             else:
+                sleep(0.2)
                 self.request.send((WAIT + " WAIT").encode())
                 player.setIsTurn(True)
                 while playerWaiting == True:
