@@ -174,8 +174,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
             playerWaiting = True
 
             # Check which player's turn it is and message them accordingly
-            turn = game.getCurrentTurn()
-            if turn == player.getPiece():
+            if player.getIsTurn() == True:
                 sleep(0.2)
                 self.request.send((READY + " READY").encode())
 
@@ -201,9 +200,11 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                             else:
                                 sleep(0.2)
                                 self.request.send("200 OK".encode())
+                                print("Move was valid, sent OK")
                                 player.setIsTurn(False)
                                 commandSuccess = True
                                 playerWaiting = False
+                                sleep(0.2)
 
                         # Handle exit requests
                         elif (tokenized[0] == EXIT):
@@ -222,6 +223,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                 player.setIsTurn(True)
                 while playerWaiting == True:
                     pass
+                print("Exited tight loop")
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
@@ -338,12 +340,6 @@ class Game:
         else:
             return -1
 
-    # Function to check whose turn it is to move
-    def getCurrentTurn(self):
-        for eachPlayer in self.playerList:
-            if eachPlayer.getIsTurn() == True:
-                return eachPlayer.getPiece()
-
     # Function that checks the possible losing combinations
     # @return  Losing piece ("X" or "O"), "TIE" if tied, or None if not done yet
     def checkLoser(self):
@@ -352,9 +348,9 @@ class Game:
                         (3, 4, 5), (6, 7, 8))
 
         for combo in losingCombos:
-            if combo[0] == combo[1] == combo[2]:
-                if combo[0] != BLANK:
-                    return combo[0]
+            if self.gameBoard[combo[0]] == self.gameBoard[combo[1]] == self.gameBoard[combo[2]]:
+                if self.gameBoard[combo[0]] != self.BLANK:
+                    return self.gameBoard[combo[0]]
 
         if self.BLANK not in self.gameBoard:
             return self.TIE
