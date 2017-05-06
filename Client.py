@@ -11,7 +11,16 @@ from socket import *
 #Global variables
 PORT = 1337
 HOST = ""
+global LOGIN
 LOGIN = "210"
+global PLACE
+PLACE = "211"
+global EXIT
+EXIT = "212"
+global WAIT
+WAIT = "213"
+global START
+START = "214"
 
 #Main function that initiates the client
 def main():
@@ -51,10 +60,8 @@ def main():
             "The connection to the server specified was refused. Your first argument seems to have been invalid."
         )
         return
-    #Wait for server response
+    #Wait for server response. Decode the response.
     response = clientSocket.recv(1024).decode()
-    #Decode response
-    response = response.decode()
     #Check if response is 200 OK
     if(response == "200 OK"):
         print(
