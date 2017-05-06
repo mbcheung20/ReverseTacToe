@@ -40,18 +40,19 @@ def main():
             "Error: The second argument must be the number '1337'. This is the designated port that the server is listening at."
         )
         return
-    #Create an INET, STREAMing socket
+    #Initialize client socket
     clientSocket = socket(AF_INET, SOCK_STREAM)
     #Try to bind socket to the given host and port
     try:
         clientSocket.connect((HOST, PORT))
+    #If connection fails, close client socket
     except ConnectionRefusedError:
         print(
             "The connection to the server specified was refused. Your first argument seems to have been invalid."
         )
         return
     #Wait for server response
-    response = clientSocket.recv(1024)
+    response = clientSocket.recv(1024).decode()
     #Decode response
     response = response.decode()
     #Check if response is 200 OK
@@ -101,16 +102,49 @@ def main():
             )
             #Wait and receive response from the server
             response = clientSocket.recv(1024)
+            #Decode response
+            response = response.decode()
             #Debug print out
             print(
                 "Response from server: " + response + "."
             )
             #TODO
             #If login was accepted
+            if(response == "200 OK"):
+                #Wait and receive response from the server
+                response = clientSocket.recv(1024)
+                #Decode response
+                response = response.decode()
+                #Debug print out
+                print(
+                    "Response from server: " + response + "."
+                )
                 #If game is not ready to play
-                    #Wait until game is ready to play
-                #If game is ready to play
-                    #If it's my turn
+                if(response == "213 WAIT"):
+                    #Wait until server says game is ready
+                    response = clientSocket.recv(1024)
+                    #Decode response
+                    response = response.decode()
+                    #Debug print out
+                    print(
+                        "Response from server: " + response + "."
+                    )
+                    #Server says game is ready and it is my turn
+                    if(response == "214 START"):
+                        #Wait for the board state from the server
+                        response = clientSocket.recv(1024)
+                        #Decode response
+                        board = response.decode()
+                        #Notify the player that the game is ready and print out board
+                        print(
+                            "Game is ready to be played. Make your move."
+                        )
+                        print(
+                            board
+                        )
+                        continue
+            #If login was not accepted
+
             #TODO: If login was accepted
                 #TODO: If game is ready to play
                     #TODO:
