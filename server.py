@@ -1,19 +1,22 @@
 #Names: Jake Tusa, Michael Cheung, Billy Ko
-#Date: 5/6/17
+#Date: 5/7/17
 #Purpose: CSE 310 Final Project Server
 
+#This code satisfies part 1.
+
+# Imports
 import socketserver
 import threading
 from time import sleep
 
-# Define protocols
+# Protocols
 OK = "200 OK"
 LOGIN = "210"
 PLACE = "211"
 EXIT = "212"
 WAIT = "213 WAIT"
 START = "214 START"
-READY = "215 READY"
+GO = "215 GO"
 WON = "216 WON"
 LOST = "217 LOST"
 TIED = "218 TIED"
@@ -22,7 +25,7 @@ LEFT = "220 LEFT"
 DISPLAY = "221 DISPLAY"
 ERROR = "400 ERROR"
 
-# Define global variables
+# Global variables
 playerList = []
 nameList = []
 playerWaiting = True
@@ -33,22 +36,6 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
     # Main function
     def handle(self):
-
-        # Reference global protocols
-        global OK
-        global LOGIN
-        global PLACE
-        global EXIT
-        global WAIT
-        global START
-        global READY
-        global WON
-        global LOST
-        global TIED
-        global NAME
-        global LEFT
-        global DISPLAY
-        global ERROR
 
         # Reference the global variables that need to be shared
         global nameList
@@ -222,7 +209,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                 # Check which player's turn it is and message them accordingly
                 if player.getIsTurn() == True:
                     sleep(0.2)
-                    self.request.send(READY.encode())
+                    self.request.send(GO.encode())
 
                     # Loop variable
                     commandSuccess = False
@@ -335,6 +322,7 @@ class Player:
     def setIsTurn(self, isTurn):
         self.isTurn = isTurn
 
+#Represents a game of modified tic tac toe
 class Game:
 
     # Static fields
