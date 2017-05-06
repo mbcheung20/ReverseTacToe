@@ -7,10 +7,15 @@ import socketserver
 class TCPHandler(socketserver.BaseRequestHandler):
 
     # Define global variables / protocols
+    global LOGIN
     LOGIN = "210"
+    global PLACE
     PLACE = "211"
+    global EXIT
     EXIT = "212"
+    global WAIT
     WAIT = "213"
+    global START
     START = "214"
 
     # Main function
@@ -37,72 +42,67 @@ class TCPHandler(socketserver.BaseRequestHandler):
                 name = ""
                 loginSuccess = False
 
-                try:
-                    # Handle incoming commands
-                    message = self.request.recv(1024)
-                    message = message.decode()
-                    tokenized = message.split()
+                # Handle incoming commands
+                message = self.request.recv(1024)
+                message = message.decode()
+                print(message)
+                tokenized = message.split()
 
-                    # Handle login requests
-                    if tokenized[0] == LOGIN:
-                        if message not in nameList:
-                            nameList.append(message)
-                            name = tokenized[1]
-                            loginSuccess = True
-                        else:
-                            self.request.send("400 Error: Name already taken.".encode())
-
-                    # Handle place requests
-                    elif tokenized[0] == PLACE:
-                        raise CommandError()
-
-                    # Handle exit requests
-                    elif tokenized[0] == EXIT:
-                        self.request.send("212 Goodbye: Player has exited.".encode())
-
-                    # Handle other requests
+                # Handle login requests
+                if tokenized[0] == LOGIN:
+                    if message not in nameList:
+                        nameList.append(message)
+                        name = tokenized[1]
+                        loginSuccess = True
+                        self.request.send("200 OK".encode())
                     else:
-                        raise BadCommandError()
+                        self.request.send("400 Error: Name already taken.".encode())
 
-                    # Store the name of the player that logged in, update his/her
-                    # state, and increment our player counter
-                    if player1 == None:
-                        player1 = Player(self.request, addr, name, "available", "X")
-
-                    elif player2 == None:
-                        player2 = Player(self.request, addr, name, "available", "O")
-
-                except CommandError():
+                # Handle place requests
+                elif tokenized[0] == PLACE:
                     self.request.send("400 Error: You cannot use that command at this time.".encode())
 
-                except BadCommandError():
+                # Handle exit requests
+                elif tokenized[0] == EXIT:
+                    self.request.send(EXIT + " EXIT: Player has exited.".encode())
+
+                # Handle other requests
+                else:
                     self.request.send("400 Error: Command not recognized.".encode())
 
                 if loginSuccess:
-                    # Increment the number of players
-                    numPlayers += 1
+                    # Store the name of the player that logged in, update his/her
+                    # state, and increment our player counter
+                    if player1 == None:
+                        player1 = Player(self.request, self.client_address, name, "available", "X")
 
-                    # If we only have one player, tell him/her to wait
-                    if numPlayers == 1:
-                        self.request.send("Please wait a moment for another player to join.".encode())
+                    elif player2 == None:
+                        player2 = Player(self.request, self.client_address, name, "available", "O")
 
-                    # If we have two players, create a game and update the
-                    # players' states to be "busy"
-                    elif numPlayers == 2:
-                        game = Game()
+                # Increment the number of players
+                numPlayers += 1
 
-                        # Update player states to reflect that they are in a game
-                        player1.setState("busy")
-                        player2.setState("busy")
+                # If we only have one player, tell him/her to wait
+                if numPlayers == 1:
+                    self.request.send("Please wait a moment for another player to join.".encode())
 
-                        # Send playerIds to opposing players
-                        oppPlayer1 = "Opponent name: " + player2.getName()
-                        oppPlayer2 = "Opponent name: " + player1.getName()
-                        player1.getConnectionSocket().send(oppPlayer1.encode())
-                        player2.getConnectionSocket().send(oppPlayer2.encode())
+                # If we have two players, create a game and update the
+                # players' states to be "busy"
+                elif numPlayers == 2:
+                    game = Game()
 
-                        # Set the game as active
-                        game.setIsActive(True)
+                    # Update player states to reflect that they are in a game
+                    player1.setState("busy")
+                    player2.setState("busy")
+
+                    # Send playerIds to opposing players
+                    oppPlayer1 = "Opponent name: " + player2.getName()
+                    oppPlayer2 = "Opponent name: " + player1.getName()
+                    player1.getConnectionSocket().send(oppPlayer1.encode())
+                    player2.getConnectionSocket().send(oppPlayer2.encode())
+
+                    # Set the game as active
+                    game.setIsActive(True)
 
             # While there is a game active, loop
             while game.getIsActive() == True:
@@ -240,13 +240,6 @@ class Game:
             return TIE
 
         return None
-
-# New exceptions for invalid/bad commands
-class CommandError(Exception):
-    pass
-
-class BadCommandError(Exception):
-    pass
 
 # Create the server
 if __name__ == "__main__":
