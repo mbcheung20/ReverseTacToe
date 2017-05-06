@@ -112,7 +112,7 @@ def main():
                 response = clientSocket.recv(1024).decode()
                 #Debug print out
                 print(
-                    "Response from server: " + response + "."
+                    "Response from server: " + response
                 )
                 #If game is not ready to play
                 if(response == "213 WAIT"):
@@ -166,6 +166,12 @@ def main():
                                 print(
                                     "It is your turn make your move."
                                 )
+                                continue
+                            elif(response == "218 LEFT"):
+                                print(
+                                    "Your opponent left the game. Sorry about that."
+                                )
+                                continue
             #If login was not accepted
             if(response == "400 ERROR"):
                 #Inform the user that login was denied
@@ -200,12 +206,46 @@ def main():
                 "Place message was: '" + placeMessage + "'"
             )
             #Receive the response from the server
-            response = clientSocket.recv(1024)
+            response = clientSocket.recv(1024).decode()
             #Debug print out
             print(
-                "Response from server: " + response + "."
+                "Response from server: " + response
             )
-            #TODO: Add appropriate handling based on the code returned by the server
+            #If move denied
+            if(response == "400 ERROR"):
+                #Inform the user that the move was invalid
+                print(
+                    "Invalid move. Spot on the board is already taken."
+                )
+                continue
+            #If move was accepted
+            elif(response == "200 OK"):
+                #Wait for the updated board state
+                board = clientSocket.recv(1024).decode()
+                #Display board state
+                print(
+                    board
+                )
+                #Wait for the next server message
+                response = clientSocket.recv(1024).decode()
+                #If game is over and I won
+                if(response == "216 WON"):
+                    print(
+                        "The game is over. You won! Congratulations!"
+                    )
+                    continue
+                #If game is over and I lost
+                elif(response == "217 LOST"):
+                    print(
+                        "The game is over. You lost."
+                    )
+                    continue
+                #If my turn
+                elif(response == "215 READY"):
+                    print(
+                        "It is your turn make your move."
+                    )
+                    continue
         #If exit command given
         elif(arguments[0] == "exit" and len(arguments) == 1):
             #Generate exit message
@@ -229,7 +269,6 @@ def main():
                 "Error: Command not recognized. If you are not familiar with the accepted commands, feel free to input 'help' to see "
                 "the available commands, their uses, and how to use them."
             )
-
 
 #Calls the main function on execution
 if __name__ == "__main__":
