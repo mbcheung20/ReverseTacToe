@@ -67,6 +67,9 @@ def main():
         return
     #Continuously run the client prompt until exit
     while(True):
+        response = clientSocket.recv(1024).decode()
+        if(response == "200 OK"):
+            print("great")
         #Grab user input from command line
         userInput = input("> ")
         #Split user input based on whitespace
