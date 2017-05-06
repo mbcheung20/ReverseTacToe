@@ -100,57 +100,79 @@ def main():
                 "Login message sent to server.\n"
                 "Login message was: '" + loginMessage + "'"
             )
-            #Wait and receive response from the server
-            response = clientSocket.recv(1024)
-            #Decode response
-            response = response.decode()
+            #Wait and receive response from the server. Decode it.
+            response = clientSocket.recv(1024).decode()
             #Debug print out
             print(
-                "Response from server: " + response + "."
+                "Response from server: " + response
             )
-            #TODO
             #If login was accepted
             if(response == "200 OK"):
-                #Wait and receive response from the server
-                response = clientSocket.recv(1024)
-                #Decode response
-                response = response.decode()
+                #Wait and receive response from the server. Decode it.
+                response = clientSocket.recv(1024).decode()
                 #Debug print out
                 print(
                     "Response from server: " + response + "."
                 )
                 #If game is not ready to play
                 if(response == "213 WAIT"):
-                    #Wait until server says game is ready
-                    response = clientSocket.recv(1024)
-                    #Decode response
-                    response = response.decode()
+                    #Wait until server says game is ready. Decode the response.
+                    response = clientSocket.recv(1024).decode()
                     #Debug print out
                     print(
-                        "Response from server: " + response + "."
+                        "Response from server: " + response
                     )
-                    #Server says game is ready and it is my turn
+                    #Server says game is ready
                     if(response == "214 START"):
                         #Wait for the board state from the server
-                        response = clientSocket.recv(1024)
-                        #Decode response
-                        board = response.decode()
+                        board = clientSocket.recv(1024).decode()
                         #Notify the player that the game is ready and print out board
                         print(
-                            "Game is ready to be played. Make your move."
+                            "Game is starting."
                         )
                         print(
                             board
                         )
-                        continue
+                        #Wait for whose turn it is
+                        response = clientSocket.recv(1024).decode()
+                        #Debug print out
+                        print(
+                            "Response from server: " + response
+                        )
+                        #Server says it is my turn
+                        if(response == "215 READY"):
+                            print(
+                                "It is your turn. Make your move."
+                            )
+                            continue
+                        #Server says it is opponent's turn
+                        elif(response == "213 WAIT"):
+                            print(
+                                "Opponent is making his/her move."
+                            )
+                            #Wait for the updated board state
+                            board = clientSocket.recv(1024).decode()
+                            #Print out updated board state
+                            print(
+                                board
+                            )
+                            #Wait for my turn
+                            response = clientSocket.rev(1024).decode()
+                            #Debug print out
+                            print(
+                                "Response from server: " + response
+                            )
+                            if(response == "215 READY"):
+                                print(
+                                    "It is your turn make your move."
+                                )
             #If login was not accepted
-
-            #TODO: If login was accepted
-                #TODO: If game is ready to play
-                    #TODO:
-                #TODO: If game is not ready yet
-            #TODO: If login was rejected
-            #TODO
+            if(response == "400 ERROR"):
+                #Inform the user that login was denied
+                print(
+                    "Login attempt was denied. Please select a different username."
+                )
+                continue
         #If place command given
         elif(arguments[0] == "place" and len(arguments) == 2):
             #Try to obtain integer object using the second argument
