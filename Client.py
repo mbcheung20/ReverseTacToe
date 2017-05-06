@@ -11,6 +11,7 @@ from socket import *
 
 #Global variables
 PORT = 1337
+loggedIn = False;
 
 #Protocols
 OK = "200"
@@ -103,6 +104,8 @@ def main():
             tokenized = response.split()
             #If login was accepted
             if(tokenized[0] == OK):
+                #Note that login was accepted
+                loggedIn = True
                 #Wait and receive response from the server. Decode it.
                 response = clientSocket.recv(1024).decode()
                 #Debug print out
@@ -227,6 +230,9 @@ def main():
                             continue
             #If login was not accepted
             if(tokenized[0] == ERROR):
+                if(loggedIn):
+                    print("Already logged in. Make a move.")
+                    continue
                 #Inform the user that login was denied
                 print("Login attempt was denied. Please select a different username.")
                 continue
