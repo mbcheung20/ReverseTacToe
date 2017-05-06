@@ -5,43 +5,32 @@
 import socketserver
 import threading
 
-# Define protocols
-global LOGIN
-LOGIN = "210"
-global PLACE
-PLACE = "211"
-global EXIT
-EXIT = "212"
-global WAIT
-WAIT = "213"
-global START
-START = "214"
-global READY
-READY = "215"
-global WON
-WON = "216"
-global LOST
-LOST = "217"
-global TIED
-TIED = "218"
-global NAME
-NAME = "219"
-
 # Define global variables
-global playerList
 playerList = []
-
-global nameList
 nameList = []
-
 playerWaiting = True
 game = None
 
 class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
+    # Define protocols
+    LOGIN = "210"
+    PLACE = "211"
+    EXIT = "212"
+    WAIT = "213"
+    START = "214"
+    READY = "215"
+    WON = "216"
+    LOST = "217"
+    TIED = "218"
+    NAME = "219"
+
     # Main function
     def handle(self):
 
+        # Reference the global variables that need to be shared
+        global nameList
+        global playerList
         global playerWaiting
         global game
 
@@ -107,14 +96,16 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                 while playerWaiting == True:
                     pass
 
+            # Set up the game
             elif player.getPiece() == "O":
                 game = Game()
                 game.createBoard()
+                for eachPlayer in playerList:
+                    game.addPlayer(eachPlayer)
                 playerWaiting = False
 
             # Update player state to reflect that they are in a game
             player.setState("busy")
-            game.addPlayer(player)
 
             # Send playerIds to opposing players
             for gamePlayer in game.getPlayerList():
@@ -263,9 +254,13 @@ class Game:
                               self.gameBoard[3], self.gameBoard[4], self.gameBoard[5],
                               self.gameBoard[6], self.gameBoard[7], self.gameBoard[8])
 
-        # Send the formatted string to the clients
-        player1.getConnectionSocket.send(display.encode())
-        player2.getConnectionSocket.send(display.encode())
+        return display.encode()
+
+    # Function to check whose turn it is to move
+    def getCurrentTurn(self):
+        for eachPlayer in self.playerList:
+            if eachPlayer.getIsTurn() == True:
+                return eachPlayer.getPiece()
 
     # Function that checks the possible losing combinations
     # @return  Losing piece ("X" or "O"), "TIE" if tied, or None if not done yet
