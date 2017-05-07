@@ -262,8 +262,8 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                             self.request.send(OK.encode())
                             playerList.remove(player)
                             game.removePlayer(player)
-                            playerExited == True
-                            playerWaiting == False
+                            playerExited = True
+                            playerWaiting = False
                             killThread = True
                             sleep(0.2)
 
