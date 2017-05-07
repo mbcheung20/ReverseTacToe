@@ -23,11 +23,15 @@ TIED = "218 TIED"
 NAME = "219 NAME"
 LEFT = "220 LEFT"
 DISPLAY = "221 DISPLAY"
+WHO = "222 WHO"
+GAMES = "223 GAMES"
+PLAY = "224 PLAY"
 ERROR = "400 ERROR"
 
 # Global variables
 playerList = []
 nameList = []
+gameList = []
 playerWaiting = True
 playerExited = False
 game = None
@@ -40,6 +44,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
         # Reference the global variables that need to be shared
         global nameList
         global playerList
+        global gameList
         global playerExited
         global playerWaiting
         global game
@@ -336,11 +341,15 @@ class Game:
     TIE = "TIE"
 
     # Regular fields
+    gameID = 0
     playerList = []
     gameBoard = []
     isActive = False
 
     # Getters
+    def getGameID(self):
+        return self.gameID
+
     def getPlayerList(self):
         return self.playerList
 
@@ -348,6 +357,9 @@ class Game:
         return self.isActive
 
     # Setters
+    def setGameID(self, gameID):
+        self.gameID = gameID
+
     def setIsActive(self, isActive):
         self.isActive = isActive
 
