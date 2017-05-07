@@ -26,11 +26,13 @@ DISPLAY = "221 DISPLAY"
 WHO = "222"
 GAMES = "223"
 PLAY = "224"
+MATCHED = "225 MATCHED"
 ERROR = "400 ERROR"
 
 # Global variables
 playerList = []
 nameList = []
+requestedList = []
 gameList = []
 totalGames = 0
 playerWaiting = True
@@ -45,12 +47,14 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
         global nameList
         global playerList
         global gameList
+        global requestedList
         global totalGames
         global playerExited
         global playerWaiting
 
         # Local variables to each thread/client
         localGameID = -1
+        lobbyLoop = True
         killThread = False
 
         # Accept incoming connections
@@ -136,8 +140,91 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
             if killThread == True:
                 return
 
+            # Add the new player to the lobby list
+            player = Player()
+            player.setConnSocket(self.request)
+            player.setName(name)
+            player.setState("available")
+            playerList.append(player)
+
+            # Place the player in a lobby
+            while lobbyLoop == True:
+                # Handle incoming commands
+                lobbyMessage = self.request.recv(1024)
+                lobbyMessage = lobbyMessage.decode()
+                tokenized = lobbyMessage.split()
+
+                # Handle login requests
+                if tokenized[0] == LOGIN:
+                    sleep(0.1)
+                    self.request.send(ERROR.encode())
+
+                # Handle place requests
+                elif tokenized[0] == PLACE:
+                    sleep(0.1)
+                    self.request.send(ERROR.encode())
+
+                # Handle exit requests
+                elif tokenized[0] == EXIT:
+                    sleep(0.1)
+                    self.request.send(OK.encode())
+                    killThread = True
+                    break
+
+                # Handle who requests
+                elif tokenized[0] == WHO:
+                    whoString = OK + " "
+                    for eachPlayer in playerList:
+                        whoString = whoString + eachPlayer.getName() + " "
+                    whoString = whoString.rstrip()
+                    sleep(0.1)
+                    self.request.send(whoString.encode())
+
+                # Handle games requests
+                elif tokenized[0] == GAMES:
+                    gamesString = OK
+                    for eachGame in gameList:
+                        gamesString = gamesString + " " + str(eachGame.getGameID()) + ","
+                        for eachPlayer in eachGame.getPlayerList():
+                            gamesString = gamesString + eachPlayer.getName() + ","
+                        gamesString = gamesString.rstrip(',')
+                    sleep(0.1)
+                    self.request.send(gamesString.encode())
+
+                # Handle play requests
+                elif tokenized[0] == PLAY:
+                    oppName = tokenized[2]
+                    foundOpposing = False
+                    for eachPlayer in playerList:
+                        if oppName == eachPlayer.getName() and oppName != player.getName():
+                            player.setPiece("X")
+                            player.setIsTurn(True)
+                            foundOpposing = True
+                            lobbyLoop = False
+                            sleep(0.1)
+                            self.request.send(OK.encode())
+                            oppSocket = eachPlayer.getConnSocket()
+                            sleep(0.1)
+                            oppSocket.send(MATCHED.encode())
+                    if foundOpposing == False:
+                        sleep(0.1)
+                        self.request.send(ERROR.encode())
+
+                elif tokenized[0] == "200":
+                    player.setPiece("O")
+                    player.setIsTurn(False)
+                    lobbyLoop = False
+                    sleep(0.1)
+                    self.request.send(OK.encode())
+
+                # Handle other requests
+                else:
+                    sleep(0.1)
+                    self.request.send(ERROR.encode())
+
             # Store the name of the player that logged in, update his/her
             # state, and increment our player counter
+            '''
             if not playerList:
                 player = Player(name, "available", "X", True)
 
@@ -145,6 +232,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                 player = Player(name, "available", "O", False)
 
             playerList.append(player)
+            '''
 
             # If we only have one player, tell him/her to wait
             if player.getPiece() == "X":
@@ -167,7 +255,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                 sleep(0.1)
 
             # Get the local game's ID on both clients
-            localGameID = gameList[len(gameList)-1].getGameID()
+            localGameID = gameList[totalGames-1].getGameID()
 
             # Update player state to reflect that they are in a game
             player.setState("busy")
@@ -194,6 +282,9 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
             # Remove the players from the active players list
             playerList.remove(player)
+
+        if killThread == True:
+            return
 
         # While there is a game active, loop
         localGame = self.findGameByGameID(localGameID)
@@ -364,19 +455,24 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 class Player:
 
     # Player fields
+    connSocket = None
     name = ""
     state = ""
     piece = ""
     isTurn = False
 
     # Constructor
-    def __init__(self, name, state, piece, isTurn):
+    def __init__(self, connSocket, name, state, piece, isTurn):
+        self.connSocket = connSocket
         self.name = name
         self.state = state
         self.piece = piece
         self.isTurn = isTurn
 
     # Getters
+    def getConnSocket(self):
+        return self.connSocket
+
     def getName(self):
         return self.name
 
@@ -390,6 +486,9 @@ class Player:
         return self.isTurn
 
     # Setters
+    def setConnSocket(self, connSocket):
+        self.connSocket = connSocket
+
     def setName(self, name):
         self.name = name
 
