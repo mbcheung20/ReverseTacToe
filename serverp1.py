@@ -72,7 +72,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                     if tokenized[0] == LOGIN:
 
                         if tokenized[1] not in nameList:
-                            nameList.append(tokenized[1])
+                            nameList.append(tokenized[2])
                             name = tokenized[1]
                             loginSuccess = True
                             sleep(0.1)
@@ -246,7 +246,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
                         # Handle place requests
                         elif (tokenized[0] == PLACE):
-                            attemptMove = game.updateBoard(player, tokenized[1])
+                            attemptMove = game.updateBoard(player, tokenized[2])
                             if attemptMove == -1:
                                 sleep(0.1)
                                 self.request.send(ERROR.encode())
