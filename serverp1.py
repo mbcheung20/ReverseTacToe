@@ -71,9 +71,9 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                     # Handle login requests
                     if tokenized[0] == LOGIN:
 
-                        if tokenized[1] not in nameList:
+                        if tokenized[2] not in nameList:
                             nameList.append(tokenized[2])
-                            name = tokenized[1]
+                            name = tokenized[2]
                             loginSuccess = True
                             sleep(0.1)
                             self.request.send(OK.encode())
@@ -99,7 +99,10 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                         self.request.send(ERROR.encode())
 
                 except IndexError:
-                    pass
+                    return
+
+                except ConnectionResetError:
+                    return
 
             # Exit the function
             if killThread == True:
@@ -273,7 +276,10 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                             self.request.send(ERROR.encode())
 
                     except IndexError:
-                        pass
+                        return
+
+                    except ConnectionResetError:
+                        return
 
             else:
                 sleep(0.1)
