@@ -559,7 +559,7 @@ def main():
             print("SERVER RESPONSE: "+ response)
             #Split the response by spaces
             games = response.split()
-            if(tokenized[0] == GAMES):
+            if(tokenized[0] == OK):
                 for index in range(2, len(games)):
                     tokenized = games[index].split(',')
                     print("Game ID: " + tokenized[0])
@@ -583,7 +583,7 @@ def main():
             print("SERVER RESPONSE: " + response)
             #Split the response by spaces
             names = response.split()
-            if(tokenized[0] == WHO):
+            if(tokenized[0] == OK):
                 for index in range(2, len(names)):
                     print("Player ID: " + names[index])
                 continue
@@ -594,7 +594,13 @@ def main():
             #Generate the play message
             playMessage = PLAY + " " + arguments[1]
             #Send play message to server
-            client.
+            clientSocket.send(playMessage.encode())
+            #Print out for debugging
+            print("Play message was sent to server. Play message was '" + playMessage + "'")
+            #Wait for server response and decode it
+            response = clientSocket.recv(1024).decode()
+            #Print out for debugging
+            print("SERVER RESPONSE: " + response)
 
         #If the given command does not match any of the supported commands, print out the error message and reprompt
         else:
