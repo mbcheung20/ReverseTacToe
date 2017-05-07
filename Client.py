@@ -31,11 +31,12 @@ ERROR = "400"
 PORT = 1337
 loggedIn = False;
 
-#TODO: Make minor changes to protol definitions to fit Yanni Liu's specifications (mainly LOGIN and PLACE)
+#TODO: Make minor changes to protol definitions to fit Yanni Liu's specifications (mainly LOGIN and PLACE and other methods like that)
 #TODO: Maybe restructure client so that the order isn't hard coded
+
 #TODO: Change login so you aren't expecting to be automatched
-#TODO: Update help menu
 #TODO: Decide how to send play message
+#TODO: Add multithreading/select to be able to listen and send
 
 #Main function that initiates the client
 def main():
@@ -80,17 +81,24 @@ def main():
             continue
         #If the help command is entered properly, print out the help message.
         elif(arguments[0] == "help" and len(arguments) == 1):
-            print("help: This command takes no arguments. It prints out all commands available, a brief descriptions "
-                  "of each of them, and the syntax of their usage. The only way to use this command is to input 'help'.\n\n"
-
-                  "login [string]: This command takes one argument, which is your name. This name will uniquely identify you to the "
+            print("login [String]: This command takes one argument, which is your name. This name will uniquely identify you to the "
                   "server. An example of how to use this command is to input 'login Michael'.\n\n"
 
                   "place [int]: This command takes one argument, which is an integer between 1 and 9 inclusive. This number identifies "
                   "the cell that you want to occupy with this move. An example of how to use this command is to input 'place 4'.\n\n"
 
-                  "exit: This command takes no arguments. Upon issuing this command, you will exit the server. You may issue this command "
-                  "whenever you want. The only way to use this command is to input 'exit'.")
+                  "exit: This command takes no arguments. Upon issuing this command, you will exit the server.The only way to use this "
+                  "command is to input 'exit'.\n\n"
+
+                  "games: This command takes no arguments. It will trigger a query that is sent to the server, which will return a list of "
+                  "current ongoing games. The game ID and the players are listed per game.\n\n")
+
+                  "who: This command takes no arguments. It will trigger a query that is sent to the server, which will return a list of "
+                  "players that are curently logged-in and available to play."
+
+                  "play [String]: This command takes on argument, which is the name of the player you would like to play a game with. If the "
+                  "player is available, a game will be started between you and the other player. Otherwise, the server will tell you that a game "
+                  "could not be started. At that point, you are free to choose another player to play against.")
         #If the login command is entered properly
         elif(arguments[0] == "login" and len(arguments) == 2):
             #Generate the login message and send it to the server.
