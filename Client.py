@@ -37,6 +37,7 @@ loggedIn = False;
 #TODO: Change login so you aren't expecting to be automatched
 #TODO: Decide how to send play message
 #TODO: Add multithreading/select to be able to listen and send
+#TODO: Remove port hard coding
 
 #Main function that initiates the client
 def main():
