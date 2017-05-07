@@ -10,9 +10,9 @@ from socket import *
 
 #Protocols
 OK = "200 OK"
-LOGIN = "210"
-PLACE = "211"
-EXIT = "212"
+LOGIN = "210 LOGIN"
+PLACE = "211 PLACE"
+EXIT = "212 EXIT"
 WAIT = "213 WAIT"
 START = "214 START"
 GO = "215 GO"
@@ -26,9 +26,6 @@ ERROR = "400 ERROR"
 
 #Global variables
 loggedIn = False;
-
-#TODO: Make minor changes to protol definitions to fit Yanni Liu's specifications (mainly LOGIN, PLACE, and EXIT and other methods like that)
-#TODO: Maybe restructure client so that the order isn't hard coded
 
 #Main function that initiates the client
 def main():
