@@ -84,7 +84,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
                         if tokenized[2] not in nameList:
                             nameList.append(tokenized[2])
-                            name = tokenized[1]
+                            name = tokenized[2]
                             loginSuccess = True
                             sleep(0.1)
                             self.request.send(OK.encode())
