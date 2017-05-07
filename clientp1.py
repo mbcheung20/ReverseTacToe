@@ -207,6 +207,8 @@ def main():
                 continue
         #If the place command is entered properly
         elif(arguments[0] == "place" and len(arguments) == 2):
+            if(loggedIn == False):
+                print("You cannot place a piece yet. You are not logged in and you are not in a game.")
             #Try to obtain integer object using the second argument
             try:
                 tileNumber = int(arguments[1])
