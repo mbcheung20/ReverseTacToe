@@ -260,6 +260,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                         # Handle exit requests
                         elif (tokenized[0] == EXIT):
                             self.request.send(OK.encode())
+                            nameList.remove(player.getName())
                             playerList.remove(player)
                             game.removePlayer(player)
                             playerExited = True
