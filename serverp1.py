@@ -48,7 +48,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
         killThread = False
 
         # Accept incoming connections
-        print("Connection accepted: " + self.client_address[0])
+        print("Connection from IP: " + self.client_address[0] + " accepted.")
         sleep(0.1)
         self.request.send(OK.encode())
 
@@ -102,6 +102,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                     return
 
                 except ConnectionResetError:
+                    print("Client at IP:" + self.client_address[0] + " exited unceremoniously.")
                     return
 
             # Exit the function
@@ -279,6 +280,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                         return
 
                     except ConnectionResetError:
+                        print("Client at IP: " + self.client_address[0] + " exited unceremoniously.")
                         return
 
             else:
