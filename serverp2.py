@@ -55,6 +55,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
         # Local variables to each thread/client
         localGameID = -1
         lobbyLoop = True
+        exitLobbyLoop = True
         killThread = False
 
         # Accept incoming connections
@@ -174,7 +175,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                         sleep(0.1)
                         self.request.send(OK.encode())
                         killThread = True
-                        break
+                        return
 
                     # Handle who requests
                     elif tokenized[0] == WHO:
@@ -233,18 +234,6 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                 except ConnectionResetError:
                     print("Client at IP: " + self.client_address[0] + " exited unceremoniously.")
 
-            # Store the name of the player that logged in, update his/her
-            # state, and increment our player counter
-            '''
-            if not playerList:
-                player = Player(name, "available", "X", True)
-
-            else:
-                player = Player(name, "available", "O", False)
-
-            playerList.append(player)
-            '''
-
             # If we only have one player, tell him/her to wait
             if player.getPiece() == "X":
                 sleep(0.1)
@@ -294,6 +283,9 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
             # Remove the players from the active players list
             playerList.remove(player)
 
+            # Tell players that the game is starting
+            self.request.send(START.encode())
+
         if killThread == True:
             return
 
@@ -304,23 +296,147 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
             if killThread == True:
                 break
 
-            # If someone left the game, wait for a new player and then restart
+            # If someone left the game, send the other player back to the "lobby" and delete the game
             if playerExited == True:
+                localGame.removePlayer(player)
+                gameList.remove(localGame)
+                playerList.append(player)
                 self.request.send(LEFT.encode())
-                player.setPiece("X")
-                player.setIsTurn(True)
                 sleep(0.1)
-                while playerExited == True:
-                    pass
+                # Place the player in a lobby
+                while exitLobbyLoop == True:
+
+                    try:
+                        # Handle incoming commands
+                        exitLobbyMessage = self.request.recv(1024)
+                        exitLobbyMessage = exitLobbyMessage.decode()
+                        tokenized = exitLobbyMessage.split()
+
+                        # Handle login requests
+                        if tokenized[0] == LOGIN:
+                            sleep(0.1)
+                            self.request.send(ERROR.encode())
+
+                        # Handle place requests
+                        elif tokenized[0] == PLACE:
+                            sleep(0.1)
+                            self.request.send(ERROR.encode())
+
+                        # Handle exit requests
+                        elif tokenized[0] == EXIT:
+                            sleep(0.1)
+                            self.request.send(OK.encode())
+                            killThread = True
+                            return
+
+                        # Handle who requests
+                        elif tokenized[0] == WHO:
+                            whoString = OK + " "
+                            for eachPlayer in playerList:
+                                whoString = whoString + eachPlayer.getName() + " "
+                            whoString = whoString.rstrip()
+                            sleep(0.1)
+                            self.request.send(whoString.encode())
+
+                        # Handle games requests
+                        elif tokenized[0] == GAMES:
+                            gamesString = OK
+                            for eachGame in gameList:
+                                gamesString = gamesString + " " + str(eachGame.getGameID()) + ","
+                                for eachPlayer in eachGame.getPlayerList():
+                                    gamesString = gamesString + eachPlayer.getName() + ","
+                                gamesString = gamesString.rstrip(',')
+                            sleep(0.1)
+                            self.request.send(gamesString.encode())
+
+                        # Handle play requests
+                        elif tokenized[0] == PLAY:
+                            oppName = tokenized[2]
+                            foundOpposing = False
+                            for eachPlayer in playerList:
+                                if oppName == eachPlayer.getName() and oppName != player.getName():
+                                    player.setPiece("X")
+                                    player.setIsTurn(True)
+                                    foundOpposing = True
+                                    lobbyLoop = False
+                                    sleep(0.1)
+                                    self.request.send(OK.encode())
+                                    oppSocket = eachPlayer.getConnSocket()
+                                    sleep(0.1)
+                                    oppSocket.send(MATCHED.encode())
+                            if foundOpposing == False:
+                                sleep(0.1)
+                                self.request.send(ERROR.encode())
+
+                        elif tokenized[0] == "200":
+                            player.setPiece("O")
+                            player.setIsTurn(False)
+                            lobbyLoop = False
+                            sleep(0.1)
+                            self.request.send(OK.encode())
+
+                        # Handle other requests
+                        else:
+                            sleep(0.1)
+                            self.request.send(ERROR.encode())
+
+                    except IndexError:
+                        return
+
+                    except ConnectionResetError:
+                        print("Client at IP: " + self.client_address[0] + " exited unceremoniously.")
+
+                # If we only have one player, tell him/her to wait
+                if player.getPiece() == "X":
+                    sleep(0.1)
+                    self.request.send(WAIT.encode())
+                    while playerWaiting == True:
+                        pass
+
+                # Set up the game
+                elif player.getPiece() == "O":
+                    localGame = Game()
+                    totalGames += 1
+                    localGame.setGameID(totalGames)
+                    localGame.createBoard()
+                    for eachPlayer in playerList:
+                        if eachPlayer not in localGame.getPlayerList():
+                            localGame.addPlayer(eachPlayer)
+                    gameList.append(localGame)
+                    playerWaiting = False
+                    sleep(0.1)
+
+                # Get the local game's ID on both clients
+                localGameID = gameList[totalGames-1].getGameID()
+
+                # Update player state to reflect that they are in a game
+                player.setState("busy")
+
+                # Let the players know that the game is about to start
                 sleep(0.1)
                 self.request.send(START.encode())
 
-                # Send name to new player
+                # Get a reference to our local game
+                localGame = self.findGameByGameID(localGameID)
+
+                # Send playerIds to opposing players
                 for gamePlayer in localGame.getPlayerList():
                     if gamePlayer != player:
                         opposingPlayer = NAME + ": " + gamePlayer.getName()
-                        sleep(0.2)
+                        sleep(0.1)
                         self.request.send(opposingPlayer.encode())
+
+                # If this player is a replacement, stop the other player from looping
+                playerExited = False
+
+                # Set the game as active
+                localGame.setIsActive(True)
+
+                # Remove the players from the active players list
+                playerList.remove(player)
+
+                # Tell player that the game is starting
+                self.request.send(START.encode())
 
             # Send the players the visualization of the board
             boardDisplay = localGame.displayBoard()
