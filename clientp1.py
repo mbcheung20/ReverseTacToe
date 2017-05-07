@@ -27,7 +27,7 @@ ERROR = "400 ERROR"
 #Global variables
 loggedIn = False;
 
-#TODO: Make minor changes to protol definitions to fit Yanni Liu's specifications (mainly LOGIN and PLACE and other methods like that)
+#TODO: Make minor changes to protol definitions to fit Yanni Liu's specifications (mainly LOGIN, PLACE, and EXIT and other methods like that)
 #TODO: Maybe restructure client so that the order isn't hard coded
 
 #Main function that initiates the client
@@ -76,7 +76,7 @@ def main():
                   "the cell that you want to occupy with this move. An example of how to use this command is to input 'place 4'.\n\n"
 
                   "exit: This command takes no arguments. Upon issuing this command, you will exit the server.The only way to use this "
-                  "command is to input 'exit'.\n\n")
+                  "command is to input 'exit'.")
         #If the login command is entered properly
         elif(arguments[0] == "login" and len(arguments) == 2):
             global loggedIn
@@ -131,75 +131,6 @@ def main():
                         if(response == GO):
                             print("It is your turn. Make your move.")
                             continue
-                        '''
-                        #TODO: Maybe remove this code
-                        #If the server says it is opponent's turn, inform the user.
-                        elif(tokenized[0] == WAIT):
-                            print("Opponent is making his/her move. Wait until it is your turn before inputting any commands.")
-                            #Wait for the server to send the updated board state and print it out
-                            board = clientSocket.recv(1024).decode()
-                            #Tokenize the board message
-                            tokenized = board.split(' ', 2)
-                            #If the server sent me the display
-                            if(tokenized[0] == DISPLAY):
-                                print(tokenized[2])
-                            #Wait for server message
-                            response = clientSocket.recv(1024).decode()
-                            #Tokenize the server message
-                            tokenized = response.split()
-                            #If the server says to make a move, inform the user and prompt.
-                            if(tokenized[0] == GO):
-                                print("It is your turn. Make your move.")
-                                continue
-                            elif(tokenized[0] == LEFT):
-                                print("Your opponent left the game. Sorry about that. Please wait while we find you a new opponent.")
-                                #Grab response from the server
-                                response = clientSocket.recv(1024).decode()
-                                #Tokenize the response
-                                tokenized = response.split()
-                                #If the code was START
-                                if(tokenized[0] == START):
-                                    print("Game is starting.")
-                                    #Grab response from the server
-                                    response =clientSocket.recv(1024).decode()
-                                    #Tokenize the response
-                                    tokenized = response.split()
-                                    if(tokenized[0] == NAME):
-                                        #Print the name
-                                        print("Your opponent's login ID is: " + tokenized[2])
-                                        #Grab response from server
-                                        response = clientSocket(1024).decode()
-                                        #Tokenize the response
-                                        tokenized = response.split(' ', 2)
-                                        #If the code was the DISPLAY
-                                        if(tokenized[0] == DISPLAY):
-                                            #Print out the board
-                                            print(tokenized[2])
-                                            #Grab response from server
-                                            response = clientSocket(1024).decode()
-                                            #Tokenize the response
-                                            tokenized = response.split(' ', 2)
-                                            #If the code was GO
-                                            if(tokenized[0] == GO):
-                                                print("It is your turn. Make your move.")
-                                                continue
-                                            #If the code was WAIT
-                                            if(tokenized[0] == WAIT):
-                                                print("Opponent is making his/her move. Wait until it is your turn before inputting any commands.")
-                                                #Wait for the server to send the updated board state and print it out
-                                                board = clientSocket.recv(1024).decode()
-                                                #Tokenize the board message
-                                                tokenized = response.split(' ', 2)
-                                                #If the server sent me the display
-                                                if(tokenized[0] == DISPLAY):
-                                                    print(tokenized[2])
-                                                #Wait for server message
-                                                response = clientSocket.recv(1024).decode()
-                                                #Print out for debugging
-                                                print("Response from server: " + response)
-                                                #Tokenize the server message
-                                                tokenized = response.split()
-                        '''
                 elif(response == START):
                     print("Game is starting.")
                     #Wait for the server to send the opponent's name
@@ -225,13 +156,6 @@ def main():
                     #Tokenize the message
                     tokenized = response.split()
                     token = tokenized[0] + " " + tokenized[1]
-                    '''
-                    #TODO: Maybe remove this code
-                    #If the server says to make a move, inform the user and prompt.
-                    if(tokenized[0] == GO):
-                        print("It is your turn. Make your move.")
-                        continue
-                    '''
                     #If the server says it is opponent's turn, inform the user.
                     if(token == WAIT):
                         print("Opponent is making his/her move. Wait until it is your turn before inputting any commands.")
@@ -275,25 +199,6 @@ def main():
                                         if(response == GO):
                                             print("It is your turn. Make your move.")
                                             continue
-                                        '''
-                                        #TODO: Maybe remove this
-                                        if(tokenized[0] == WAIT):
-                                            print("Opponent is making his/her move. Wait until it is your turn before inputting any commands.")
-                                            #Wait for the server to send the updated board state and print it out
-                                            board = clientSocket.recv(1024).decode()
-                                            #Tokenize the board message
-                                            tokenized = response.split(' ', 2)
-                                            #If the server sent me the display
-                                            if(tokenized[0] == DISPLAY):
-                                                print(tokenized[2])
-                                            #Wait for server message
-                                            response = clientSocket.recv(1024).decode()
-                                            #Print out for debugging
-                                            print("Response from server: " + response)
-                                            #Tokenize the server message
-                                            tokenized = response.split()
-                                        '''
-
             #If login was not successful
             if(tokenized[0] == ERROR):
                 #If client is already loggedIn, print out error message and reprompt.
@@ -373,24 +278,6 @@ def main():
                                     if(response == GO):
                                         print("It is your turn. Make your move.")
                                         continue
-                                    '''
-                                    #TODO: Maybe remove this code
-                                    if(tokenized[0] == WAIT):
-                                        print("Opponent is making his/her move. Wait until it is your turn before inputting any commands.")
-                                        #Wait for the server to send the updated board state and print it out
-                                        board = clientSocket.recv(1024).decode()
-                                        #Tokenize the board message
-                                        tokenized = response.split(' ', 2)
-                                        #If the server sent me the display
-                                        if(tokenized[0] == DISPLAY):
-                                            print(tokenized[2])
-                                        #Wait for server message
-                                        response = clientSocket.recv(1024).decode()
-                                        #Print out for debugging
-                                        print("Response from server: " + response)
-                                        #Tokenize the server message
-                                        tokenized = response.split()
-                                        '''
                     #Otherwise
                     else:
                         #Display board state
@@ -484,11 +371,6 @@ def main():
                                 if(reponse == GO):
                                     print("It is your turn make your move.")
                                     continue
-                                    '''
-                                elif(response == LEFT):
-                                    print("Your opponent left the game. Sorry about that.")
-                                    continue
-                                    '''
         #If the exit command is entered properly
         elif(arguments[0] == "exit" and len(arguments) == 1):
             #Generate the exit message
