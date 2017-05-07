@@ -594,7 +594,6 @@ def main():
             #Generate the play message
             playMessage = PLAY + " " + arguments[1]
             #Send play message to server
-            client.
 
         #If the given command does not match any of the supported commands, print out the error message and reprompt
         else:
