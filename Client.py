@@ -299,8 +299,14 @@ def main():
                 print(board[2])
                 #Catch the wait message from the server
                 response = clientSocket.recv(1024).decode()
+                #Debug print out
+                print("SERVER RESPONSE: " + response)
+                #Tokenize the wait message
                 tokenized = response.split()
                 if(tokenized[0] == WAIT):
+                    #Inform the user that piece was placed successfully and to wait for his/her next turn.
+                    print("Your piece was placed.")
+                    print("Opponent is making his/her move. Wait until it is your turn before inputting any commands.")
                     #Wait for the updated board state
                     board = clientSocket.recv(1024).decode().split(' ', 2)
                     #Display board state

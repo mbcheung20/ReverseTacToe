@@ -44,12 +44,13 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
         global playerWaiting
         global game
 
-        # Accept incoming connections
-        print("Connection accepted: " + self.client_address[0])
-        self.request.send(OK.encode())
-
         # Create a variable that allows us to reach the end of the control flow
         killThread = False
+
+        # Accept incoming connections
+        print("Connection accepted: " + self.client_address[0])
+        sleep(0.1)
+        self.request.send(OK.encode())
 
         # If we don't have two players, attempt to add them to the game
         if len(playerList) < 2:
@@ -59,7 +60,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
             loginSuccess = False
             player = None
 
-            while loginSuccess == False or killThread == True:
+            while loginSuccess == False and killThread == False:
 
                 try:
                     # Handle incoming commands
@@ -77,19 +78,23 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                             sleep(0.1)
                             self.request.send(OK.encode())
                         else:
+                            sleep(0.1)
                             self.request.send(ERROR.encode())
 
                     # Handle place requests
                     elif tokenized[0] == PLACE:
+                        sleep(0.1)
                         self.request.send(ERROR.encode())
 
                     # Handle exit requests
                     elif tokenized[0] == EXIT:
+                        sleep(0.1)
                         self.request.send((EXIT + " EXIT").encode())
                         killThread = True
 
                     # Handle other requests
                     else:
+                        sleep(0.1)
                         self.request.send(ERROR.encode())
 
                 except IndexError:
@@ -101,16 +106,16 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                 # Store the name of the player that logged in, update his/her
                 # state, and increment our player counter
                 if not playerList:
-                    player = Player(self.request, self.client_address, name, "available", "X", True)
+                    player = Player(name, "available", "X", True)
 
                 else:
-                    player = Player(self.request, self.client_address, name, "available", "O", False)
+                    player = Player(name, "available", "O", False)
 
                 playerList.append(player)
 
                 # If we only have one player, tell him/her to wait
                 if player.getPiece() == "X":
-                    sleep(0.2)
+                    sleep(0.1)
                     self.request.send(WAIT.encode())
                     while playerWaiting == True:
                         pass
@@ -120,23 +125,23 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                     if game == None:
                         game = Game()
                     game.createBoard()
-                    for eachPlayer in playerList:
-                        if eachPlayer not in game.getPlayerList():
-                            game.addPlayer(eachPlayer)
+                    for player in playerList:
+                        if player not in game.getPlayerList():
+                            game.addPlayer(player)
                     playerWaiting = False
 
                 # Update player state to reflect that they are in a game
                 player.setState("busy")
 
                 # Let the players know that the game is about to start
-                sleep(0.2)
+                sleep(0.1)
                 self.request.send(START.encode())
 
                 # Send playerIds to opposing players
                 for gamePlayer in game.getPlayerList():
                     if gamePlayer != player:
                         opposingPlayer = NAME + ": " + gamePlayer.getName()
-                        sleep(0.2)
+                        sleep(0.1)
                         self.request.send(opposingPlayer.encode())
 
                 # If this player is a replacement, stop the other player from looping
@@ -159,10 +164,10 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                     self.request.send(LEFT.encode())
                     player.setPiece("X")
                     player.setIsTurn(True)
-                    sleep(0.2)
+                    sleep(0.1)
                     while playerExited == True:
                         pass
-                    sleep(0.2)
+                    sleep(0.1)
                     self.request.send(START.encode())
 
                     # Send name to new player
@@ -174,7 +179,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
                 # Send the players the visualization of the board
                 boardDisplay = game.displayBoard()
-                sleep(0.2)
+                sleep(0.1)
                 self.request.send((DISPLAY + " " + boardDisplay).encode())
 
                 # Check to see if the game is over
@@ -182,25 +187,30 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
                 # If the game was a tie, notify the players and restart the game
                 if gameLoser == "TIE":
+                    sleep(0.1)
                     self.request.send(TIED.encode())
                     game.createBoard()
+                    sleep(0.1)
                     self.request.send(START.encode())
                     newDisplay = game.displayBoard()
+                    sleep(0.1)
                     self.request.send((DISPLAY + " " + boardDisplay).encode())
 
                 # If there is a winner, notify both players and restart the game
                 elif gameLoser == "X" or gameLoser == "O":
                     playerPiece = player.getPiece()
                     if gameLoser == playerPiece:
+                        sleep(0.1)
                         self.request.send(LOST.encode())
                     else:
+                        sleep(0.1)
                         self.request.send(WON.encode())
                         game.createBoard()
 
-                    sleep(0.2)
+                    sleep(0.1)
                     self.request.send(START.encode())
                     newDisplay = game.displayBoard()
-                    sleep(0.2)
+                    sleep(0.1)
                     self.request.send((DISPLAY + " " + boardDisplay).encode())
 
                 # Update wait variable
@@ -208,7 +218,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
                 # Check which player's turn it is and message them accordingly
                 if player.getIsTurn() == True:
-                    sleep(0.2)
+                    sleep(0.1)
                     self.request.send(GO.encode())
 
                     # Loop variable
@@ -223,21 +233,21 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
                             # Handle login requests
                             if (tokenized[0] == LOGIN):
+                                sleep(0.1)
                                 self.request.send(ERROR.encode())
 
                             # Handle place requests
                             elif (tokenized[0] == PLACE):
                                 attemptMove = game.updateBoard(player, tokenized[1])
                                 if attemptMove == -1:
-                                    sleep(0.2)
+                                    sleep(0.1)
                                     self.request.send(ERROR.encode())
                                 else:
-                                    sleep(0.2)
+                                    sleep(0.1)
                                     self.request.send(OK.encode())
                                     player.setIsTurn(False)
                                     commandSuccess = True
                                     playerWaiting = False
-                                    sleep(0.2)
 
                             # Handle exit requests
                             elif (tokenized[0] == EXIT):
@@ -257,7 +267,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                             pass
 
                 else:
-                    sleep(0.2)
+                    sleep(0.1)
                     self.request.send(WAIT.encode())
                     player.setIsTurn(True)
                     while playerWaiting == True:
@@ -266,31 +276,23 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
 
+#Represents a player
 class Player:
 
     # Player fields
-    connectionSocket = None
-    addr = None
     name = ""
     state = ""
     piece = ""
     isTurn = False
 
-    def __init__(self, connectionSocket, addr, name, state, piece, isTurn):
-        self.connectionSocket = connectionSocket
-        self.addr = addr
+    # Constructor
+    def __init__(self, name, state, piece, isTurn):
         self.name = name
         self.state = state
         self.piece = piece
         self.isTurn = isTurn
 
-    # Accessor methods
-    def getConnectionSocket(self):
-        return self.connectionSocket
-
-    def getAddr(self):
-        return self.addr
-
+    # Getters
     def getName(self):
         return self.name
 
@@ -303,13 +305,7 @@ class Player:
     def getIsTurn(self):
         return self.isTurn
 
-    # Mutator methods
-    def setConnectionSocket(self, connectionSocket):
-        self.connectionSocket = connectionSocket
-
-    def setAddr(self, addr):
-        self.addr = addr
-
+    # Setters
     def setName(self, name):
         self.name = name
 
@@ -335,17 +331,14 @@ class Game:
     gameBoard = []
     isActive = False
 
-    #def __init__(self):
-        #gameBoard = createBoard(self)
-
-    # Accessor methods
+    # Getters
     def getPlayerList(self):
         return self.playerList
 
     def getIsActive(self):
         return self.isActive
 
-    # Mutator methods
+    # Setters
     def setIsActive(self, isActive):
         self.isActive = isActive
 
@@ -355,14 +348,15 @@ class Game:
     def removePlayer(self, player):
         self.playerList.remove(player)
 
-    # Internal function to initialize the list that holds the game board representation
+    # Initialize the list that holds the game board representation
     def createBoard(self):
         tempBoard = []
         for eachPlace in range(self.NUM_PLACES):
             tempBoard.append(self.BLANK)
         self.gameBoard = tempBoard
 
-    # Function to send a visualization of the current game board to the clients
+    # Returns a visualization of the current game board to send the clients
+    # @return String representing the display, always successful
     def displayBoard(self):
         display = """
         {0} {1} {2}
@@ -373,7 +367,9 @@ class Game:
 
         return display
 
-    # Function to update the board with the player's choice
+    # Update the board with the player's piece placement
+    # @return 0 on successful
+    # @return -1 on failure
     def updateBoard(self, player, place):
         intPlace = int(place)
         if self.gameBoard[intPlace - 1] == self.BLANK:
