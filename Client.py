@@ -30,6 +30,9 @@ loggedIn = False;
 
 #TODO: If we have time, figure out how to either block input from the client when it is not the client's turn, or how to grab that
 #input with the server and do nothing until it is that client's turn.
+#TODO: Make minor changes to protol definitions to fit Yanni Liu's specifications (mainly LOGIN and PLACE)
+#TODO: Maybe restructure client so that the order isn't hard coded
+#TODO: Handling for exiting mid game and getting re-matched with someone
 
 #Main function that initiates the client
 def main():
@@ -303,8 +306,9 @@ def main():
                 print("SERVER RESPONSE: " + response)
                 #Tokenize the wait message
                 tokenized = response.split()
+                #If wait received
                 if(tokenized[0] == WAIT):
-                    #Inform the user that piece was placed successfully and to wait for his/her next turn.
+                    #Inform the user that piece was placed successfully and to wait for his/her next turn.1
                     print("Your piece was placed.")
                     print("Opponent is making his/her move. Wait until it is your turn before inputting any commands.")
                     #Wait for the updated board state
@@ -313,6 +317,8 @@ def main():
                     print(board[2])
                     #Wait for next message from the server
                     response = clientSocket.recv(1024).decode()
+                    #Print for debugging
+                    print("SERVER RESPONSE:" + response)
                     #Tokenize
                     tokenized = response.split()
                     #Declare boolean for whether game ended or not
@@ -337,21 +343,54 @@ def main():
                     elif(tokenized[0] == LEFT):
                         print("Your opponent left the game. Sorry about that.")
                         continue
-                    if(over == True):
-                        #Wait until server says game is ready. Decode the response.
+                else:
+                    #Declare boolean for whether game ended or not
+                    over = False
+                    #If game is over and I won
+                    if(tokenized[0] == WON):
+                        print("The game is over. You won! Congratulations!")
+                        over = True
+                    #If game is over and I lost
+                    elif(tokenized[0] == LOST):
+                        print("The game is over. You lost. Better luck next time!")
+                        over = True
+                    #If game is over and I tied
+                    elif(tokenized[0] == TIED) :
+                        print("The game ended in a tie.")
+                        over = True
+                #If the game ended
+                if(over == True):
+                    #Wait until server says game is ready. Decode the response.
+                    response = clientSocket.recv(1024).decode()
+                    #Debug print out
+                    print("Response from server: " + response)
+                    #Tokenize
+                    tokenized = response.split()
+                    #Server says game is ready
+                    if(tokenized[0] == START):
+                        #Wait for the board state from the server, decode it, and split it
+                        board = clientSocket.recv(1024).decode().split(' ', 2)
+                        #Notify the player that the game is ready and print out board
+                        print("Next game is starting.")
+                        print(board[2])
+                        #Wait for whose turn it is
                         response = clientSocket.recv(1024).decode()
                         #Debug print out
                         print("Response from server: " + response)
                         #Tokenize
                         tokenized = response.split()
-                        #Server says game is ready
-                        if(tokenized[0] == START):
-                            #Wait for the board state from the server
-                            board = clientSocket.recv(1024).decode()
-                            #Notify the player that the game is ready and print out board
-                            print("Game is starting.")
-                            print(board)
-                            #Wait for whose turn it is
+                        #Server says it is my turn
+                        if(tokenized[0] == GO):
+                            print("It is your turn. Make your move.")
+                            continue
+                        #Server says it is opponent's turn
+                        elif(tokenized[0] == WAIT):
+                            print("Opponent is making his/her move. Wait until it is your turn before inputting any commands.")
+                            #Wait for the updated board state
+                            board = clientSocket.recv(1024).decode().split(' ', 2)
+                            #Print out updated board state
+                            print(board[2])
+                            #Wait for my turn
                             response = clientSocket.recv(1024).decode()
                             #Debug print out
                             print("Response from server: " + response)
@@ -359,28 +398,11 @@ def main():
                             tokenized = response.split()
                             #Server says it is my turn
                             if(tokenized[0] == GO):
-                                print("It is your turn. Make your move.")
+                                print("It is your turn make your move.")
                                 continue
-                            #Server says it is opponent's turn
-                            elif(tokenized[0] == WAIT):
-                                print("Opponent is making his/her move.")
-                                #Wait for the updated board state
-                                board = clientSocket.recv(1024).decode()
-                                #Print out updated board state
-                                print(board)
-                                #Wait for my turn
-                                response = clientSocket.recv(1024).decode()
-                                #Debug print out
-                                print("Response from server: " + response)
-                                #Tokenize
-                                tokenized = response.split()
-                                #Server says it is my turn
-                                if(tokenized[0] == GO):
-                                    print("It is your turn make your move.")
-                                    continue
-                                elif(tokenized[0] == LEFT):
-                                    print("Your opponent left the game. Sorry about that.")
-                                    continue
+                            elif(tokenized[0] == LEFT):
+                                print("Your opponent left the game. Sorry about that.")
+                                continue
         #If the exit command is entered properly
         elif(arguments[0] == "exit" and len(arguments) == 1):
             #Generate the exit message
