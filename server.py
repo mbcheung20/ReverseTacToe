@@ -49,10 +49,8 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
         global playerExited
         global playerWaiting
 
-        # Variable to keep track of which game this client is part of
+        # Local variables to each thread/client
         localGameID = -1
-
-        # Create a variable that allows us to reach the end of the control flow
         killThread = False
 
         # Accept incoming connections
@@ -101,6 +99,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                         killThread = True
                         break
 
+                    # Handle who requests
                     elif tokenized[0] == WHO:
                         whoString = OK + " "
                         for eachPlayer in playerList:
@@ -109,6 +108,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                         sleep(0.1)
                         self.request.send(whoString.encode())
 
+                    # Handle games requests
                     elif tokenized[0] == GAMES:
                         gamesString = OK
                         for eachGame in gameList:
@@ -119,6 +119,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                         sleep(0.1)
                         self.request.send(gamesString.encode())
 
+                    # Handle play requests
                     elif tokenized[0] == PLAY:
                         sleep(0.1)
                         self.request.send(ERROR.encode())
@@ -310,6 +311,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                             killThread = True
                             sleep(0.2)
 
+                        # Handle who requests
                         elif tokenized[0] == WHO:
                             whoString = OK + " "
                             for eachPlayer in playerList:
@@ -318,17 +320,18 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                             sleep(0.1)
                             self.request.send(whoString.encode())
 
+                        # Handle games requests
                         elif tokenized[0] == GAMES:
                             gamesString = OK
                             for eachGame in gameList:
-                                gamesString = gamesString + " " + str(eachGame.getGameID())
+                                gamesString = gamesString + " " + str(eachGame.getGameID()) + ","
                                 for eachPlayer in eachGame.getPlayerList():
                                     gamesString = gamesString + eachPlayer.getName() + ","
                                 gamesString = gamesString.rstrip(',')
                             sleep(0.1)
-                            print(gamesString)
                             self.request.send(gamesString.encode())
 
+                        # Handle play requests
                         elif tokenized[0] == PLAY:
                             sleep(0.1)
                             self.request.send(ERROR.encode())
