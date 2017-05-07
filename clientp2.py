@@ -7,6 +7,7 @@
 #Imports
 import sys
 from socket import *
+import selectors
 
 #Protocols
 OK = "200 OK"
@@ -35,6 +36,7 @@ inGame = False;
 
 #TODO: Add select to be able to listen and send
 #TODO: Still have to complete - PLAY
+#TODO: Block all action if they're not logged in?
 
 #Main function that initiates the client
 def main():
@@ -69,6 +71,7 @@ def main():
     #Loop that runs the client until exit.
     while(True):
         try:
+            global inGame
             #Grab user input from command line and split it based on whitespace.
             arguments = input("> ").split()
             #If no arguments were given, reprompt the user.
@@ -84,7 +87,7 @@ def main():
 
                       "games: This command takes no arguments. It will trigger a query that is sent to the server, which will return a list of "
                       "current ongoing games. The game ID and the players are listed per game. You can only use this command when you are "
-                      "not currently in a game.""\n\n")
+                      "not currently in a game.""\n\n"
 
                       "who: This command takes no arguments. It will trigger a query that is sent to the server, which will return a list of "
                       "players that are curently logged-in and available to play. You can only use this command when you are not currently in a game.\n\n"
@@ -123,6 +126,12 @@ def main():
                     continue
             #If the place command is entered properly
             elif(arguments[0] == "place" and len(arguments) == 2):
+                if(loggedIn == False):
+                    print("You cannot place a piece yet. You are not logged in and you are not in a game.")
+                    continue
+                if(inGame == False):
+                    print("You cannot place a piece yet. You are not in a game.")
+                    continue
                 #Try to obtain integer object using the second argument
                 try:
                     tileNumber = int(arguments[1])
@@ -214,7 +223,6 @@ def main():
             #If the who command is entered properly
             elif(arguments[0] == "who" and len(arguments) == 1):
                 #Check if in-game
-                global inGame
                 if(inGame):
                     print("You cannot use this command while in a game.")
                     continue
@@ -242,7 +250,6 @@ def main():
             #If the games command is entered properly
             elif(arguments[0] == "games" and len(arguments) == 1):
                 #Check if in-game
-                global inGame
                 if(inGame):
                     print("You cannot use this command while in a game.")
                     continue
@@ -257,7 +264,7 @@ def main():
                 #Split the response by spaces
                 games = response.split()
                 token = games[0] + " " + games[1]
-                if(token = OK):
+                if(token == OK):
                     if(len(games) == 2):
                         print("No ongoing games exist.")
                         continue
@@ -274,7 +281,6 @@ def main():
             #If the play command is entered properly
             elif(arguments[0] == "play" and len(arguments) == 2):
                 #Check if in-game
-                global inGame
                 if(inGame):
                     print("You cannot use this command while in a game.")
                     continue
@@ -291,34 +297,36 @@ def main():
                     print("Invalid play request.")
                     continue
                 elif(response == OK):
+                    #TODO: Do this
+                    continue
+            #If the exit command is entered properly
+            elif(arguments[0] == "exit" and len(arguments) == 1):
+                #Generate the exit message
+                exitMessage = EXIT
+                #Send exit message to server
+                clientSocket.send(exitMessage.encode())
+                #Print out for debugging
+                print("Attempting to exit.")
+                #Wait for server response and decode it.
+                response = clientSocket.recv(1024).decode()
+                #If the server acknowledged the exit message, print out the appropriate message and close the socket.
+                if(response == OK):
+                    #Print out for debugging
+                    print("Exit acknowledged.")
+                    print("Exiting now. See you next time!")
+                    clientSocket.close()
+                    return
+                else:
+                    print("Could not exit.")
+            #If the given command does not match any of the supported commands, print out the error message and reprompt
+            else:
+                print("Error: Command not recognized. If you are not familiar with the accepted commands, feel free to input 'help' to see "
+                      "the available commands, their uses, and how to use them.")
+        #Catches ConnectionResetError
         except ConnectionResetError:
             print("Server has gone down.")
             print("Client closing.")
             return
-
-        #If the exit command is entered properly
-        elif(arguments[0] == "exit" and len(arguments) == 1):
-            #Generate the exit message
-            exitMessage = EXIT
-            #Send exit message to server
-            clientSocket.send(exitMessage.encode())
-            #Print out for debugging
-            print("Attempting to exit.")
-            #Wait for server response and decode it.
-            response = clientSocket.recv(1024).decode()
-            #If the server acknowledged the exit message, print out the appropriate message and close the socket.
-            if(response == OK):
-                #Print out for debugging
-                print("Exit acknowledged.")
-                print("Exiting now. See you next time!")
-                clientSocket.close()
-                return
-            else:
-                print("Could not exit.")
-        #If the given command does not match any of the supported commands, print out the error message and reprompt
-        else:
-            print("Error: Command not recognized. If you are not familiar with the accepted commands, feel free to input 'help' to see "
-                  "the available commands, their uses, and how to use them.")
 
 #Calls the main function on execution
 if __name__ == "__main__":
