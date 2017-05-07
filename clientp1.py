@@ -79,6 +79,10 @@ def main():
                   "command is to input 'exit'.\n\n")
         #If the login command is entered properly
         elif(arguments[0] == "login" and len(arguments) == 2):
+            global loggedIn
+            if(loggedIn):
+                print("You are already logged in.")
+                continue
             #Generate the login message and send it to the server.
             loginMessage = LOGIN + " " + arguments[1]
             clientSocket.send(loginMessage.encode())
@@ -89,7 +93,6 @@ def main():
             #If login was successful
             if(response == OK):
                 #Note that the login was accepted
-                global loggedIn
                 loggedIn = True
                 print("Login successful.")
                 #Grab server responseand decode it
