@@ -22,6 +22,9 @@ TIED = "218"
 NAME = "219"
 LEFT = "220"
 DISPLAY = "221"
+WHO = "222"
+GAMES = "223"
+PLAY = "224"
 ERROR = "400"
 
 #Global variables
@@ -176,7 +179,6 @@ def main():
                             if(tokenized[0] == GO):
                                 print("It is your turn. Make your move.")
                                 continue
-                            #TODO: If the server says that the opponent left, inform the user and wait until new opponent connects
                             elif(tokenized[0] == LEFT):
                                 print("Your opponent left the game. Sorry about that. Please wait while we find you a new opponent.")
                                 #Grab response from the server
@@ -543,6 +545,55 @@ def main():
                 print("Exiting. See you next time!")
                 clientSocket.close()
                 return
+        #If the games command is entered properly
+        elif(arguments[0] == "games" and len(arguments) == 1):
+            #Generate the games message
+            gamesMessage = GAMES
+            #Send games message to server
+            clientSocket.send(gamesMessage.encode())
+            #Print out for debugging
+            print("Games message sent to server. Games message was: '" + gamesMessage + "'")
+            #Wait for server response and decode it
+            response = clientSocket.recv(1024).decode()
+            #Print out for deubgging
+            print("SERVER RESPONSE: "+ response)
+            #Split the response by spaces
+            games = response.split()
+            if(tokenized[0] == GAMES):
+                for index in range(2, len(games)):
+                    tokenized = games[index].split(',')
+                    print("Game ID: " + tokenized[0])
+                    print("Player ID: " + tokenized[1])
+                    print("Player ID: " + tokenized[2])
+                continue
+            else:
+                print("Error: Unable to fulfill request.")
+                continue
+        #If the who command is entered properly
+        elif(arguments[0] == "who" and len(arguments) == 1):
+            #Generate the who message
+            whoMessage = WHO
+            #Send who message to server
+            client.socket.send(whoMessage.encode())
+            #Print out for debugging
+            print("Who message was sent to server. Who message was: '" + whoMessage + "'")
+            #Wait for server response and decode it
+            response = clientSocket.recv(1024).decode()
+            #Print out for debugging
+            print("SERVER RESPONSE: " + response)
+            #Split the response by spaces
+            names = response.split()
+            if(tokenized[0] == WHO):
+                for index in range(2, len(names)):
+                    print("Player ID: " + names[index])
+                continue
+            else:
+                print("Error: Unable to fulfill request.")
+                continue
+        elif(arguments[0] == "play" and len(arguments) == 2):
+            #Generate the play message
+            playMessage = PLAY + " " + arguments[1]
+
         #If the given command does not match any of the supported commands, print out the error message and reprompt
         else:
             print("Error: Command not recognized. If you are not familiar with the accepted commands, feel free to input 'help' to see "
