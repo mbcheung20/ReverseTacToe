@@ -32,6 +32,7 @@ ERROR = "400 ERROR"
 playerList = []
 nameList = []
 gameList = []
+totalGames = 0
 playerWaiting = True
 playerExited = False
 
@@ -44,6 +45,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
         global nameList
         global playerList
         global gameList
+        global totalGames
         global playerExited
         global playerWaiting
 
@@ -110,7 +112,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                     elif tokenized[0] == GAMES:
                         gamesString = OK + " "
                         for eachGame in gameList:
-                            gamesString = gamesString + str(eachGame.getGameID)
+                            gamesString = gamesString + str(eachGame.getGameID) + ","
                             for eachPlayer in eachGame.getPlayerList():
                                 gamesString = gamesString + eachPlayer.getName() + ","
                             gamesString = gamesString.rstrip(',')
@@ -153,7 +155,8 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
             # Set up the game
             elif player.getPiece() == "O":
                 localGame = Game()
-                localGame.setGameID(len(gameList) + 1)
+                totalGames += 1
+                localGame.setGameID(totalGames)
                 localGameID = localGame.getGameID()
                 localGame.createBoard()
                 for eachPlayer in playerList:
@@ -170,7 +173,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
             self.request.send(START.encode())
 
             # Get a reference to our local game
-            localGame = findGameByGameID(localGameID)
+            localGame = self.findGameByGameID(localGameID)
 
             # Send playerIds to opposing players
             for gamePlayer in localGame.getPlayerList():
@@ -303,6 +306,29 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                             playerWaiting = False
                             killThread = True
                             sleep(0.2)
+
+                        elif tokenized[0] == WHO:
+                            whoString = OK + " "
+                            for eachPlayer in playerList:
+                                whoString = whoString + eachPlayer.getName() + " "
+                            whoString = whoString.rstrip()
+                            sleep(0.1)
+                            self.request.send(whoString.encode())
+
+                        elif tokenized[0] == GAMES:
+                            gamesString = OK + " "
+                            for eachGame in gameList:
+                                gamesString = gamesString + str(eachGame.getGameID)
+                                for eachPlayer in eachGame.getPlayerList():
+                                    gamesString = gamesString + eachPlayer.getName() + ","
+                                gamesString = gamesString.rstrip(',')
+                            sleep(0.1)
+                            print(gamesString)
+                            self.request.send(gamesString.encode())
+
+                        elif tokenized[0] == PLAY:
+                            sleep(0.1)
+                            self.request.send(ERROR.encode())
 
                         # Handle other requests
                         else:
