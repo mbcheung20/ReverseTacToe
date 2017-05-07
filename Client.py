@@ -560,7 +560,7 @@ def main():
             #Split the response by spaces
             games = response.split()
             if(games[0] == OK):
-                if(len(tokenized) == 2):
+                if(len(games) == 2):
                     print("No active games exist.")
                 else:
                     for index in range(2, len(games)):
@@ -587,7 +587,7 @@ def main():
             #Split the response by spaces
             names = response.split()
             if(names[0] == OK):
-                if(len(tokenized) == 2):
+                if(len(names) == 2):
                     print("No players are logged in at the moment.")
                 else:
                     for index in range(2, len(names)):
