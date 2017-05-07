@@ -60,7 +60,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
             loginSuccess = False
             player = None
 
-            while loginSuccess == False and killThread == False:
+            while loginSuccess == False:
 
                 try:
                     # Handle incoming commands
@@ -89,8 +89,9 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                     # Handle exit requests
                     elif tokenized[0] == EXIT:
                         sleep(0.1)
-                        self.request.send((EXIT + " EXIT").encode())
+                        self.request.send(OK.encode())
                         killThread = True
+                        break
 
                     # Handle other requests
                     else:
@@ -100,178 +101,176 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                 except IndexError:
                     pass
 
+            # Exit the function
             if killThread == True:
-                pass
+                return
+
+            # Store the name of the player that logged in, update his/her
+            # state, and increment our player counter
+            if not playerList:
+                player = Player(name, "available", "X", True)
+
             else:
-                # Store the name of the player that logged in, update his/her
-                # state, and increment our player counter
-                if not playerList:
-                    player = Player(name, "available", "X", True)
+                player = Player(name, "available", "O", False)
 
-                else:
-                    player = Player(name, "available", "O", False)
+            playerList.append(player)
 
-                playerList.append(player)
+            # If we only have one player, tell him/her to wait
+            if player.getPiece() == "X":
+                sleep(0.1)
+                self.request.send(WAIT.encode())
+                while playerWaiting == True:
+                    pass
 
-                # If we only have one player, tell him/her to wait
-                if player.getPiece() == "X":
+            # Set up the game
+            elif player.getPiece() == "O":
+                if game == None:
+                    game = Game()
+                game.createBoard()
+                for eachPlayer in playerList:
+                    if eachPlayer not in game.getPlayerList():
+                        game.addPlayer(eachPlayer)
+                playerWaiting = False
+
+            # Update player state to reflect that they are in a game
+            player.setState("busy")
+
+            # Let the players know that the game is about to start
+            sleep(0.1)
+            self.request.send(START.encode())
+
+            # Send playerIds to opposing players
+            for gamePlayer in game.getPlayerList():
+                if gamePlayer != player:
+                    opposingPlayer = NAME + ": " + gamePlayer.getName()
                     sleep(0.1)
-                    self.request.send(WAIT.encode())
-                    while playerWaiting == True:
-                        pass
+                    self.request.send(opposingPlayer.encode())
 
-                # Set up the game
-                elif player.getPiece() == "O":
-                    if game == None:
-                        game = Game()
-                    game.createBoard()
-                    for player in playerList:
-                        if player not in game.getPlayerList():
-                            game.addPlayer(player)
-                    playerWaiting = False
+            # If this player is a replacement, stop the other player from looping
+            playerExited = False
 
-                # Update player state to reflect that they are in a game
-                player.setState("busy")
+            # Set the game as active
+            game.setIsActive(True)
 
-                # Let the players know that the game is about to start
+        # While there is a game active, loop
+        while game.getIsActive() == True:
+
+            if killThread == True:
+                break
+
+            # If someone left the game, wait for a new player and then restart
+            if playerExited == True:
+                self.request.send(LEFT.encode())
+                player.setPiece("X")
+                player.setIsTurn(True)
+                sleep(0.1)
+                while playerExited == True:
+                    pass
                 sleep(0.1)
                 self.request.send(START.encode())
 
-                # Send playerIds to opposing players
+                # Send name to new player
                 for gamePlayer in game.getPlayerList():
                     if gamePlayer != player:
                         opposingPlayer = NAME + ": " + gamePlayer.getName()
-                        sleep(0.1)
+                        sleep(0.2)
                         self.request.send(opposingPlayer.encode())
 
-                # If this player is a replacement, stop the other player from looping
-                playerExited = False
+            # Send the players the visualization of the board
+            boardDisplay = game.displayBoard()
+            sleep(0.1)
+            self.request.send((DISPLAY + " " + boardDisplay).encode())
 
-                # Set the game as active
-                game.setIsActive(True)
+            # Check to see if the game is over
+            gameLoser = game.checkLoser()
 
-        if killThread == True:
-            pass
-        else:
-            # While there is a game active, loop
-            while game.getIsActive() == True:
-
-                if killThread == True:
-                    break
-
-                # If someone left the game, wait for a new player and then restart
-                if playerExited == True:
-                    self.request.send(LEFT.encode())
-                    player.setPiece("X")
-                    player.setIsTurn(True)
-                    sleep(0.1)
-                    while playerExited == True:
-                        pass
-                    sleep(0.1)
-                    self.request.send(START.encode())
-
-                    # Send name to new player
-                    for gamePlayer in game.getPlayerList():
-                        if gamePlayer != player:
-                            opposingPlayer = NAME + ": " + gamePlayer.getName()
-                            sleep(0.2)
-                            self.request.send(opposingPlayer.encode())
-
-                # Send the players the visualization of the board
-                boardDisplay = game.displayBoard()
+            # If the game was a tie, notify the players and restart the game
+            if gameLoser == "TIE":
+                sleep(0.1)
+                self.request.send(TIED.encode())
+                game.createBoard()
+                sleep(0.1)
+                self.request.send(START.encode())
+                newDisplay = game.displayBoard()
                 sleep(0.1)
                 self.request.send((DISPLAY + " " + boardDisplay).encode())
 
-                # Check to see if the game is over
-                gameLoser = game.checkLoser()
-
-                # If the game was a tie, notify the players and restart the game
-                if gameLoser == "TIE":
+            # If there is a winner, notify both players and restart the game
+            elif gameLoser == "X" or gameLoser == "O":
+                playerPiece = player.getPiece()
+                if gameLoser == playerPiece:
                     sleep(0.1)
-                    self.request.send(TIED.encode())
-                    game.createBoard()
-                    sleep(0.1)
-                    self.request.send(START.encode())
-                    newDisplay = game.displayBoard()
-                    sleep(0.1)
-                    self.request.send((DISPLAY + " " + boardDisplay).encode())
-
-                # If there is a winner, notify both players and restart the game
-                elif gameLoser == "X" or gameLoser == "O":
-                    playerPiece = player.getPiece()
-                    if gameLoser == playerPiece:
-                        sleep(0.1)
-                        self.request.send(LOST.encode())
-                    else:
-                        sleep(0.1)
-                        self.request.send(WON.encode())
-                        game.createBoard()
-
-                    sleep(0.1)
-                    self.request.send(START.encode())
-                    newDisplay = game.displayBoard()
-                    sleep(0.1)
-                    self.request.send((DISPLAY + " " + boardDisplay).encode())
-
-                # Update wait variable
-                playerWaiting = True
-
-                # Check which player's turn it is and message them accordingly
-                if player.getIsTurn() == True:
-                    sleep(0.1)
-                    self.request.send(GO.encode())
-
-                    # Loop variable
-                    commandSuccess = False
-                    while not commandSuccess:
-
-                        try:
-                            # Handle incoming commands
-                            command = self.request.recv(1024)
-                            command = command.decode()
-                            tokenized = command.split()
-
-                            # Handle login requests
-                            if (tokenized[0] == LOGIN):
-                                sleep(0.1)
-                                self.request.send(ERROR.encode())
-
-                            # Handle place requests
-                            elif (tokenized[0] == PLACE):
-                                attemptMove = game.updateBoard(player, tokenized[1])
-                                if attemptMove == -1:
-                                    sleep(0.1)
-                                    self.request.send(ERROR.encode())
-                                else:
-                                    sleep(0.1)
-                                    self.request.send(OK.encode())
-                                    player.setIsTurn(False)
-                                    commandSuccess = True
-                                    playerWaiting = False
-
-                            # Handle exit requests
-                            elif (tokenized[0] == EXIT):
-                                self.request.send((EXIT + " EXIT").encode())        # DO WEIRD THINGS HERE
-                                playerList.remove(player)
-                                game.removePlayer(player)
-                                playerExited == True
-                                playerWaiting == False
-                                killThread = True
-                                sleep(0.2)
-
-                            # Handle other requests
-                            else:
-                                self.request.send(ERROR.encode())
-
-                        except IndexError:
-                            pass
-
+                    self.request.send(LOST.encode())
                 else:
                     sleep(0.1)
-                    self.request.send(WAIT.encode())
-                    player.setIsTurn(True)
-                    while playerWaiting == True:
+                    self.request.send(WON.encode())
+                    game.createBoard()
+
+                sleep(0.1)
+                self.request.send(START.encode())
+                newDisplay = game.displayBoard()
+                sleep(0.1)
+                self.request.send((DISPLAY + " " + boardDisplay).encode())
+
+            # Update wait variable
+            playerWaiting = True
+
+            # Check which player's turn it is and message them accordingly
+            if player.getIsTurn() == True:
+                sleep(0.1)
+                self.request.send(GO.encode())
+
+                # Loop variable
+                commandSuccess = False
+                while not commandSuccess:
+
+                    try:
+                        # Handle incoming commands
+                        command = self.request.recv(1024)
+                        command = command.decode()
+                        tokenized = command.split()
+
+                        # Handle login requests
+                        if (tokenized[0] == LOGIN):
+                            sleep(0.1)
+                            self.request.send(ERROR.encode())
+
+                        # Handle place requests
+                        elif (tokenized[0] == PLACE):
+                            attemptMove = game.updateBoard(player, tokenized[1])
+                            if attemptMove == -1:
+                                sleep(0.1)
+                                self.request.send(ERROR.encode())
+                            else:
+                                sleep(0.1)
+                                self.request.send(OK.encode())
+                                player.setIsTurn(False)
+                                commandSuccess = True
+                                playerWaiting = False
+
+                        # Handle exit requests
+                        elif (tokenized[0] == EXIT):
+                            self.request.send((EXIT + " EXIT").encode())
+                            playerList.remove(player)
+                            game.removePlayer(player)
+                            playerExited == True
+                            playerWaiting == False
+                            killThread = True
+                            sleep(0.2)
+
+                        # Handle other requests
+                        else:
+                            self.request.send(ERROR.encode())
+
+                    except IndexError:
                         pass
+
+            else:
+                sleep(0.1)
+                self.request.send(WAIT.encode())
+                player.setIsTurn(True)
+                while playerWaiting == True:
+                    pass
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
