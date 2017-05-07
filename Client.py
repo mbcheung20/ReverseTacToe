@@ -196,7 +196,7 @@ def main():
                                     tokenized = response.split()
                                     if(tokenized[0] == NAME):
                                         #Print the name
-                                        print("Your opponent's login ID is: " + tokenized[1])
+                                        print("Your opponent's login ID is: " + tokenized[2])
                                         #Grab response from server
                                         response = clientSocket(1024).decode()
                                         tokenized = response.split(' ', 2)
@@ -299,7 +299,7 @@ def main():
                                 tokenized = response.split()
                                 if(tokenized[0] == NAME):
                                     #Print the name
-                                    print("Your opponent's login ID is: " + tokenized[1])
+                                    print("Your opponent's login ID is: " + tokenized[2])
                                     #Grab response from server
                                     response = clientSocket.recv(1024).decode()
                                     tokenized = response.split(' ', 2)
@@ -406,7 +406,7 @@ def main():
                                 tokenized = response.split()
                                 if(tokenized[0] == NAME):
                                     #Print the name
-                                    print("Your opponent's login ID is: " + tokenized[1])
+                                    print("Your opponent's login ID is: " + tokenized[2])
                                     #Grab response from server
                                     response = clientSocket.recv(1024).decode()
                                     tokenized = response.split(' ', 2)
