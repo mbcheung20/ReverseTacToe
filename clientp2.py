@@ -291,6 +291,7 @@ def main():
                 continue
             elif(response == OK):
 
+
         #If the exit command is entered properly
         elif(arguments[0] == "exit" and len(arguments) == 1):
             #Generate the exit message

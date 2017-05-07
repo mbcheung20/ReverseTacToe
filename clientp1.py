@@ -197,7 +197,7 @@ def main():
                                             print("It is your turn. Make your move.")
                                             continue
             #If login was not successful
-            if(tokenized[0] == ERROR):
+            if(response == ERROR):
                 #If client is already loggedIn, print out error message and reprompt.
                 if(loggedIn):
                     print("You are already logged in.")
