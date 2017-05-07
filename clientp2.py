@@ -22,17 +22,22 @@ TIED = "218"
 NAME = "219"
 LEFT = "220"
 DISPLAY = "221"
+WHO = "222"
+GAMES = "223"
+PLAY = "224"
 ERROR = "400"
 
 #Global variables
 PORT = 1337
 loggedIn = False;
 
-#TODO: If we have time, figure out how to either block input from the client when it is not the client's turn, or how to grab that
-#input with the server and do nothing until it is that client's turn.
-#TODO: Make minor changes to protol definitions to fit Yanni Liu's specifications (mainly LOGIN and PLACE)
+#TODO: Make minor changes to protol definitions to fit Yanni Liu's specifications (mainly LOGIN and PLACE and other methods like that)
 #TODO: Maybe restructure client so that the order isn't hard coded
-#TODO: Handling for exiting mid game and getting re-matched with someone
+
+#TODO: Change login so you aren't expecting to be automatched
+#TODO: Decide how to send play message
+#TODO: Add multithreading/select to be able to listen and send
+#TODO: Remove port hard coding
 
 #Main function that initiates the client
 def main():
@@ -77,17 +82,24 @@ def main():
             continue
         #If the help command is entered properly, print out the help message.
         elif(arguments[0] == "help" and len(arguments) == 1):
-            print("help: This command takes no arguments. It prints out all commands available, a brief descriptions "
-                  "of each of them, and the syntax of their usage. The only way to use this command is to input 'help'.\n\n"
-
-                  "login [string]: This command takes one argument, which is your name. This name will uniquely identify you to the "
+            print("login [String]: This command takes one argument, which is your name. This name will uniquely identify you to the "
                   "server. An example of how to use this command is to input 'login Michael'.\n\n"
 
                   "place [int]: This command takes one argument, which is an integer between 1 and 9 inclusive. This number identifies "
                   "the cell that you want to occupy with this move. An example of how to use this command is to input 'place 4'.\n\n"
 
-                  "exit: This command takes no arguments. Upon issuing this command, you will exit the server. You may issue this command "
-                  "whenever you want. The only way to use this command is to input 'exit'.")
+                  "exit: This command takes no arguments. Upon issuing this command, you will exit the server.The only way to use this "
+                  "command is to input 'exit'.\n\n"
+
+                  "games: This command takes no arguments. It will trigger a query that is sent to the server, which will return a list of "
+                  "current ongoing games. The game ID and the players are listed per game.\n\n")
+
+                  "who: This command takes no arguments. It will trigger a query that is sent to the server, which will return a list of "
+                  "players that are curently logged-in and available to play."
+
+                  "play [String]: This command takes on argument, which is the name of the player you would like to play a game with. If the "
+                  "player is available, a game will be started between you and the other player. Otherwise, the server will tell you that a game "
+                  "could not be started. At that point, you are free to choose another player to play against.")
         #If the login command is entered properly
         elif(arguments[0] == "login" and len(arguments) == 2):
             #Generate the login message and send it to the server.
@@ -176,7 +188,6 @@ def main():
                             if(tokenized[0] == GO):
                                 print("It is your turn. Make your move.")
                                 continue
-                            #TODO: If the server says that the opponent left, inform the user and wait until new opponent connects
                             elif(tokenized[0] == LEFT):
                                 print("Your opponent left the game. Sorry about that. Please wait while we find you a new opponent.")
                                 #Grab response from the server
@@ -543,6 +554,78 @@ def main():
                 print("Exiting. See you next time!")
                 clientSocket.close()
                 return
+        #If the games command is entered properly
+        elif(arguments[0] == "games" and len(arguments) == 1):
+            #Generate the games message
+            gamesMessage = GAMES
+            #Send games message to server
+            clientSocket.send(gamesMessage.encode())
+            #Print out for debugging
+            print("Games message sent to server. Games message was: '" + gamesMessage + "'")
+            #Wait for server response and decode it
+            response = clientSocket.recv(1024).decode()
+            #Print out for deubgging
+            print("SERVER RESPONSE: "+ response)
+            #Split the response by spaces
+            games = response.split()
+            if(games[0] == OK):
+                if(len(games) == 2):
+                    print("No active games exist.")
+                else:
+                    for index in range(2, len(games)):
+                        tokenized = games[index].split(',')
+                        print("Game ID: " + tokenized[0])
+                        print("Player ID: " + tokenized[1])
+                        print("Player ID: " + tokenized[2])
+                    continue
+            else:
+                print("Error: Unable to fulfill request.")
+                continue
+        #If the who command is entered properly
+        elif(arguments[0] == "who" and len(arguments) == 1):
+            #Generate the who message
+            whoMessage = WHO
+            #Send who message to server
+            clientSocket.send(whoMessage.encode())
+            #Print out for debugging
+            print("Who message was sent to server. Who message was: '" + whoMessage + "'")
+            #Wait for server response and decode it
+            response = clientSocket.recv(1024).decode()
+            #Print out for debugging
+            print("SERVER RESPONSE: " + response)
+            #Split the response by spaces
+            names = response.split()
+            if(names[0] == OK):
+                if(len(names) == 2):
+                    print("No players are ready to play at the moment.")
+                else:
+                    for index in range(2, len(names)):
+                        print("Player ID: " + names[index])
+                    continue
+            else:
+                print("Error: Unable to fulfill request.")
+                continue
+        #If the play command is entered properly
+        elif(arguments[0] == "play" and len(arguments) == 2):
+            #Generate the play message
+            playMessage = PLAY + " " + arguments[1]
+            #Send play message to server
+            clientSocket.send(playMessage.encode())
+            #Print out for debugging
+            print("Play message was sent to server. Play message was '" + playMessage + "'")
+            #Wait for server response and decode it
+            response = clientSocket.recv(1024).decode()
+            #Print out for debugging
+            print("SERVER RESPONSE: " + response)
+            #Split the response by spaces
+            tokenized = response.split()
+            #If request denied
+            if(tokenized[0] == ERROR):
+                print("Invalid request.")
+                continue
+            elif(tokenized[0] == OK):
+                continue
+
         #If the given command does not match any of the supported commands, print out the error message and reprompt
         else:
             print("Error: Command not recognized. If you are not familiar with the accepted commands, feel free to input 'help' to see "
