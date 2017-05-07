@@ -574,7 +574,7 @@ def main():
             #Generate the who message
             whoMessage = WHO
             #Send who message to server
-            client.socket.send(whoMessage.encode())
+            clientSocket.send(whoMessage.encode())
             #Print out for debugging
             print("Who message was sent to server. Who message was: '" + whoMessage + "'")
             #Wait for server response and decode it
@@ -593,6 +593,8 @@ def main():
         elif(arguments[0] == "play" and len(arguments) == 2):
             #Generate the play message
             playMessage = PLAY + " " + arguments[1]
+            #Send play message to server
+            client.
 
         #If the given command does not match any of the supported commands, print out the error message and reprompt
         else:
