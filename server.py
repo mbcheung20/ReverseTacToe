@@ -193,11 +193,19 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                 self.request.send(START.encode())
                 newDisplay = game.displayBoard()
                 sleep(0.1)
-                self.request.send((DISPLAY + " " + boardDisplay).encode())
+                self.request.send((DISPLAY + " " + newDisplay).encode())
 
             # If there is a winner, notify both players and restart the game
             elif gameLoser == "X" or gameLoser == "O":
                 playerPiece = player.getPiece()
+
+                # Update turns for the next game
+                if playerPiece == "X":
+                    player.setIsTurn(True)
+                else:
+                    player.setIsTurn(False)
+
+                # Send a won or lost message to the players
                 if gameLoser == playerPiece:
                     sleep(0.1)
                     self.request.send(LOST.encode())
@@ -206,11 +214,12 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                     self.request.send(WON.encode())
                     game.createBoard()
 
+                # Send the refreshed game board
                 sleep(0.1)
                 self.request.send(START.encode())
                 newDisplay = game.displayBoard()
                 sleep(0.1)
-                self.request.send((DISPLAY + " " + boardDisplay).encode())
+                self.request.send((DISPLAY + " " + newDisplay).encode())
 
             # Update wait variable
             playerWaiting = True
@@ -250,7 +259,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
                         # Handle exit requests
                         elif (tokenized[0] == EXIT):
-                            self.request.send((EXIT + " EXIT").encode())
+                            self.request.send(OK.encode())
                             playerList.remove(player)
                             game.removePlayer(player)
                             playerExited == True
