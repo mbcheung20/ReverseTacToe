@@ -478,7 +478,7 @@ def main():
                                 #Wait for my turn
                                 response = clientSocket.recv(1024).decode()
                                 #Server says it is my turn
-                                if(response == GO):
+                                if(reponse == GO):
                                     print("It is your turn make your move.")
                                     continue
                                     '''
