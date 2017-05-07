@@ -102,7 +102,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                     return
 
                 except ConnectionResetError:
-                    print("Client at IP:" + self.client_address[0] + " exited unceremoniously.")
+                    print("Client at IP: " + self.client_address[0] + " exited unceremoniously.")
                     return
 
             # Exit the function
