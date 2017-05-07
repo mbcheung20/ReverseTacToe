@@ -31,11 +31,11 @@ ERROR = "400"
 PORT = 1337
 loggedIn = False;
 
-#TODO: If we have time, figure out how to either block input from the client when it is not the client's turn, or how to grab that
-#input with the server and do nothing until it is that client's turn.
 #TODO: Make minor changes to protol definitions to fit Yanni Liu's specifications (mainly LOGIN and PLACE)
 #TODO: Maybe restructure client so that the order isn't hard coded
-#TODO: Handling for exiting mid game and getting re-matched with someone
+#TODO: Change login so you aren't expecting to be automatched
+#TODO: Update help menu
+#TODO: Decide how to send play message
 
 #Main function that initiates the client
 def main():
@@ -559,13 +559,16 @@ def main():
             print("SERVER RESPONSE: "+ response)
             #Split the response by spaces
             games = response.split()
-            if(tokenized[0] == OK):
-                for index in range(2, len(games)):
-                    tokenized = games[index].split(',')
-                    print("Game ID: " + tokenized[0])
-                    print("Player ID: " + tokenized[1])
-                    print("Player ID: " + tokenized[2])
-                continue
+            if(games[0] == OK):
+                if(len(tokenized) == 2):
+                    print("No active games exist.")
+                else:
+                    for index in range(2, len(games)):
+                        tokenized = games[index].split(',')
+                        print("Game ID: " + tokenized[0])
+                        print("Player ID: " + tokenized[1])
+                        print("Player ID: " + tokenized[2])
+                    continue
             else:
                 print("Error: Unable to fulfill request.")
                 continue
@@ -583,13 +586,17 @@ def main():
             print("SERVER RESPONSE: " + response)
             #Split the response by spaces
             names = response.split()
-            if(tokenized[0] == OK):
-                for index in range(2, len(names)):
-                    print("Player ID: " + names[index])
-                continue
+            if(names[0] == OK):
+                if(len(tokenized) == 2):
+                    print("No players are logged in at the moment.")
+                else:
+                    for index in range(2, len(names)):
+                        print("Player ID: " + names[index])
+                    continue
             else:
                 print("Error: Unable to fulfill request.")
                 continue
+        #If the play command is entered properly
         elif(arguments[0] == "play" and len(arguments) == 2):
             #Generate the play message
             playMessage = PLAY + " " + arguments[1]
@@ -601,6 +608,14 @@ def main():
             response = clientSocket.recv(1024).decode()
             #Print out for debugging
             print("SERVER RESPONSE: " + response)
+            #Split the response by spaces
+            tokenized = response.split()
+            #If request denied
+            if(tokenized[0] == ERROR):
+                print("Invalid request.")
+                continue
+            elif(tokenized[0] == OK):
+                continue
 
         #If the given command does not match any of the supported commands, print out the error message and reprompt
         else:
