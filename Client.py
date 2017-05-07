@@ -588,7 +588,7 @@ def main():
             names = response.split()
             if(names[0] == OK):
                 if(len(names) == 2):
-                    print("No players are logged in at the moment.")
+                    print("No players are ready to play at the moment.")
                 else:
                     for index in range(2, len(names)):
                         print("Player ID: " + names[index])
