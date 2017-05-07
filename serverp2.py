@@ -175,7 +175,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                         sleep(0.1)
                         self.request.send(OK.encode())
                         killThread = True
-                        return
+                        break
 
                     # Handle who requests
                     elif tokenized[0] == WHO:
@@ -233,6 +233,9 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
                 except ConnectionResetError:
                     print("Client at IP: " + self.client_address[0] + " exited unceremoniously.")
+
+            if killThread == True:
+                return
 
             # If we only have one player, tell him/her to wait
             if player.getPiece() == "X":
