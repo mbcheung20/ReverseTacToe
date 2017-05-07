@@ -110,9 +110,9 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                         self.request.send(whoString.encode())
 
                     elif tokenized[0] == GAMES:
-                        gamesString = OK + " "
+                        gamesString = OK
                         for eachGame in gameList:
-                            gamesString = gamesString + str(eachGame.getGameID) + ","
+                            gamesString = gamesString + " " + str(eachGame.getGameID()) + ","
                             for eachPlayer in eachGame.getPlayerList():
                                 gamesString = gamesString + eachPlayer.getName() + ","
                             gamesString = gamesString.rstrip(',')
@@ -157,13 +157,16 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                 localGame = Game()
                 totalGames += 1
                 localGame.setGameID(totalGames)
-                localGameID = localGame.getGameID()
                 localGame.createBoard()
                 for eachPlayer in playerList:
                     if eachPlayer not in localGame.getPlayerList():
                         localGame.addPlayer(eachPlayer)
                 gameList.append(localGame)
                 playerWaiting = False
+                sleep(0.1)
+
+            # Get the local game's ID on both clients
+            localGameID = gameList[len(gameList)-1].getGameID()
 
             # Update player state to reflect that they are in a game
             player.setState("busy")
@@ -192,7 +195,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
             playerList.remove(player)
 
         # While there is a game active, loop
-        localGame = findGameByGameID(localGameID)
+        localGame = self.findGameByGameID(localGameID)
         while localGame.getIsActive() == True:
 
             if killThread == True:
@@ -316,9 +319,9 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                             self.request.send(whoString.encode())
 
                         elif tokenized[0] == GAMES:
-                            gamesString = OK + " "
+                            gamesString = OK
                             for eachGame in gameList:
-                                gamesString = gamesString + str(eachGame.getGameID)
+                                gamesString = gamesString + " " + str(eachGame.getGameID())
                                 for eachPlayer in eachGame.getPlayerList():
                                     gamesString = gamesString + eachPlayer.getName() + ","
                                 gamesString = gamesString.rstrip(',')
