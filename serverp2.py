@@ -592,12 +592,14 @@ class Player:
     isTurn = False
 
     # Constructor
+    '''
     def __init__(self, connSocket, name, state, piece, isTurn):
         self.connSocket = connSocket
         self.name = name
         self.state = state
         self.piece = piece
         self.isTurn = isTurn
+        '''
 
     # Getters
     def getConnSocket(self):
