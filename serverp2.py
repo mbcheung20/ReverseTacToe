@@ -34,6 +34,7 @@ playerList = []
 localPlayerList = []
 nameList = []
 gameList = []
+gameIndexList = []
 totalGames = 0
 
 class ThreadedTCPHandler(socketserver.BaseRequestHandler):
@@ -46,6 +47,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
         global localPlayerList
         global nameList
         global gameList
+        global gameIndexList
         global totalGames
 
         # Local variables to each thread/client
@@ -165,8 +167,8 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
                 # Handle exit requests
                 elif tokenized[0] == EXIT:
-                    sleep(0.1)
                     nameList.remove(player.getName())
+                    sleep(0.1)
                     self.request.send(OK.encode())
                     killThread = True
                     break
@@ -255,11 +257,12 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                 localGame.addPlayer(eachPlayer)
             localPlayerList = []
             gameList.append(localGame)
+            gameIndexList.append(localGame)
             opposingPlayer.setWaitingOnGame(False)
             sleep(0.1)
 
         # Get the local game's ID on both clients
-        localGameID = gameList[totalGames-1].getGameID()
+        localGameID = gameIndexList[totalGames-1].getGameID()
 
         # Update player state to reflect that they are in a game
         player.setState("busy")
@@ -302,8 +305,8 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                 localGame.removePlayer(player)
                 gameList.remove(localGame)
                 playerList.append(player)
-                self.request.send(LEFT.encode())
                 sleep(0.1)
+                self.request.send(LEFT.encode())
                 # Place the player in a lobby
                 while exitLobbyLoop == True:
 
@@ -325,8 +328,8 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
                         # Handle exit requests
                         elif tokenized[0] == EXIT:
-                            sleep(0.1)
                             nameList.remove(player.getName())
+                            sleep(0.1)
                             self.request.send(OK.encode())
                             killThread = True
                             return
@@ -399,6 +402,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
                 # Set up the game
                 elif player.getPiece() == "O":
+                    localGame = None
                     localGame = Game()
                     totalGames += 1
                     localGame.setGameID(totalGames)
@@ -412,11 +416,12 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                         localGame.addPlayer(eachPlayer)
                     localPlayerList = []
                     gameList.append(localGame)
+                    gameIndexList.append(localGame)
                     opposingPlayer.setWaitingOnGame(False)
                     sleep(0.1)
 
                 # Get the local game's ID on both clients
-                localGameID = gameList[totalGames-1].getGameID()
+                localGameID = gameIndexList[totalGames-1].getGameID()
 
                 # Update player state to reflect that they are in a game
                 player.setState("busy")
@@ -527,6 +532,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
                         # Handle exit requests
                         elif (tokenized[0] == EXIT):
+                            sleep(0.1)
                             self.request.send(OK.encode())
                             nameList.remove(player.getName())
                             localGame.removePlayer(player)
@@ -562,6 +568,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
                         # Handle other requests
                         else:
+                            sleep(0.1)
                             self.request.send(ERROR.encode())
 
                     except IndexError:
