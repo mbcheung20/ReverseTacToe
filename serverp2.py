@@ -251,6 +251,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
             localGame.createBoard()
             for eachPlayer in localGamePlayers:
                 if eachPlayer not in localGame.getPlayerList():
+                    print("Adding " + eachPlayer.getName() + " to local game " + str(localGame.getGameID()))                          ### 
                     localGame.addPlayer(eachPlayer)
             gameList.append(localGame)
             playerWaiting = False
