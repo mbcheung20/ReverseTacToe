@@ -166,7 +166,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                 # Handle exit requests
                 elif tokenized[0] == EXIT:
                     sleep(0.1)
-                    nameList.remove(name)
+                    nameList.remove(player.getName())
                     self.request.send(OK.encode())
                     killThread = True
                     break
@@ -326,6 +326,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                         # Handle exit requests
                         elif tokenized[0] == EXIT:
                             sleep(0.1)
+                            nameList.remove(player.getName())
                             self.request.send(OK.encode())
                             killThread = True
                             return
