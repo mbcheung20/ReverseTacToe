@@ -32,7 +32,6 @@ ERROR = "400 ERROR"
 # Global variables
 playerList = []
 nameList = []
-requestedList = []
 gameList = []
 totalGames = 0
 playerWaiting = True
@@ -47,13 +46,13 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
         global nameList
         global playerList
         global gameList
-        global requestedList
         global totalGames
         global playerExited
         global playerWaiting
 
         # Local variables to each thread/client
         localGameID = -1
+        localGamePlayers = []
         lobbyLoop = True
         exitLobbyLoop = True
         killThread = False
@@ -170,6 +169,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                 # Handle exit requests
                 elif tokenized[0] == EXIT:
                     sleep(0.1)
+                    nameList.remove(name)
                     self.request.send(OK.encode())
                     killThread = True
                     break
@@ -200,6 +200,8 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                     foundOpposing = False
                     for eachPlayer in playerList:
                         if oppName == eachPlayer.getName() and oppName != player.getName():
+                            localGamePlayers.append(player)
+                            localGamePlayers.append(eachPlayer)
                             player.setPiece("X")
                             player.setIsTurn(True)
                             foundOpposing = True
@@ -247,7 +249,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
             totalGames += 1
             localGame.setGameID(totalGames)
             localGame.createBoard()
-            for eachPlayer in playerList:
+            for eachPlayer in localGamePlayers:
                 if eachPlayer not in localGame.getPlayerList():
                     localGame.addPlayer(eachPlayer)
             gameList.append(localGame)
