@@ -369,7 +369,7 @@ def main():
                                     #Wait for my turn
                                     response = clientSocket.recv(1024).decode()
                                     #Server says it is my turn
-                                    if(reponse == GO):
+                                    if(response == GO):
                                         print("It is your turn make your move.")
                                         continue
             #If the exit command is entered properly
