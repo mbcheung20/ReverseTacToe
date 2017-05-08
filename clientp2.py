@@ -37,7 +37,6 @@ inGame = False;
 clientSocket = None
 justMatched = False
 isChallenger = False
-challenger = True
 
 #TODO: Add select to be able to listen and send
 #TODO: Still have to complete - PLAY
@@ -48,6 +47,8 @@ def parseInput():
     #Reference globals
     global loggedIn
     global inGame
+    global isChallenger
+    global justMatched
     try:
         arguments = input().split()
         #If no arguments were  given, reprompt the user.
@@ -84,8 +85,6 @@ def parseInput():
             #Generate the login message and send it to the server.
             loginMessage = LOGIN + " " + arguments[1]
             clientSocket.send(loginMessage.encode())
-            #Print out message for user
-            print("Attempting to login.")
             #Grab server response and decode it
             response = clientSocket.recv(1024).decode()
             #If login was successful
@@ -122,8 +121,6 @@ def parseInput():
             placeMessage = PLACE + " " + arguments[1]
             #Send place message to server
             clientSocket.send(placeMessage.encode())
-            #Debug print out
-            print("Attempting to place piece.")
             #Receive the response from the server
             response = clientSocket.recv(1024).decode()
             #If move denied
@@ -153,6 +150,9 @@ def parseInput():
                     if(token == LEFT):
                         print("Your opponent left the game. Sorry about that.")
                         print("You are being sent back to the lobby. Feel free to find another match or wait until someone else challenges you.")
+                        justMatched = False
+                        inGame = False
+                        isChallenger = False
                         return
                     #Otherwise
                     else:
@@ -163,17 +163,20 @@ def parseInput():
                         #If game is over and I won
                         if(response == WON):
                             print("The game is over. You won! Congratulations!")
-                            print("You are being sent back to the lobby. Feel free to find another match or wait until someone else challenges you.")
+                            justMatched = False
+                            isChallenger = False
                             return
                         #If game is over and I lost
                         elif(response == LOST):
                             print("The game is over. You lost. Better luck next time!")
-                            print("You are being sent back to the lobby. Feel free to find another match or wait until someone else challenges you.")
+                            justMatched = False
+                            isChallenger = False
                             return
                         #If game is over and I tied
                         elif(response == TIED) :
                             print("The game ended in a tie.")
-                            print("You are being sent back to the lobby. Feel free to find another match or wait until someone else challenges you.")
+                            justMatched = False
+                            isChallenger = False
                             return
                         #If my turn
                         elif(response == GO):
@@ -183,17 +186,20 @@ def parseInput():
                     #If game is over and I won
                     if(response == WON):
                         print("The game is over. You won! Congratulations!")
-                        print("You are being sent back to the lobby. Feel free to find another match or wait until someone else challenges you.")
+                        justMatched = False
+                        isChallenger = False
                         return
                     #If game is over and I lost
                     elif(response == LOST):
                         print("The game is over. You lost. Better luck next time!")
-                        print("You are being sent back to the lobby. Feel free to find another match or wait until someone else challenges you.")
+                        justMatched = False
+                        isChallenger = False
                         return
                     #If game is over and I tied
                     elif(response == TIED) :
                         print("The game ended in a tie.")
-                        print("You are being sent back to the lobby. Feel free to find another match or wait until someone else challenges you.")
+                        justMatched = False
+                        isChallenger = False
                         return
         #If the who command is entered properly
         elif(arguments[0] == "who" and len(arguments) == 1):
@@ -204,13 +210,10 @@ def parseInput():
             #Generate the who message and send it to the server
             whoMessage = WHO
             clientSocket.send(whoMessage.encode())
-            #Print out message for user
-            print("Attempting to find out who can play with you.")
             #Grab server response and decode it
             response = clientSocket.recv(1024).decode()
             names = response.split()
             token = names[0] + " " + names[1]
-            print(names)
             #If request was successful
             if(token == OK):
                 if(len(names) == 2):
@@ -233,8 +236,6 @@ def parseInput():
             gamesMessage = GAMES
             #Send games message to server
             clientSocket.send(gamesMessage.encode())
-            #Print out for debugging
-            print("Attempting to obtain list of ongoing games.")
             #Wait for server response and decode it
             response = clientSocket.recv(1024).decode()
             #Split the response by spaces
@@ -265,8 +266,6 @@ def parseInput():
             playMessage = PLAY + " " + arguments[1]
             #Send play message to server
             clientSocket.send(playMessage.encode())
-            #Print out for debugging
-            print("Play message was sent to server.")
             #Wait for server response and decode it
             response = clientSocket.recv(1024).decode()
             #If request denied
@@ -274,8 +273,7 @@ def parseInput():
                 print("Invalid play request.")
                 return
             elif(response == OK):
-                print("Okay. You can play.")
-                global isChallenger
+                print("Play request accepted.")
                 isChallenger = True
                 inGame = True
                 return
@@ -285,14 +283,10 @@ def parseInput():
             exitMessage = EXIT
             #Send exit message to server
             clientSocket.send(exitMessage.encode())
-            #Print out for debugging
-            print("Attempting to exit.")
             #Wait for server response and decode it.
             response = clientSocket.recv(1024).decode()
             #If the server acknowledged the exit message, print out the appropriate message and close the socket.
             if(response == OK):
-                #Print out for debugging
-                print("Exit acknowledged.")
                 print("Exiting now. See you next time!")
                 clientSocket.close()
                 return EXIT
@@ -321,31 +315,38 @@ def parseMessage():
             inGame = True
             justMatched = True
             clientSocket.send(OK.encode())
-            print("Match agreed.")
             return
         if(response == OK and justMatched):
             justMatched = False
-            print("Server returned OK once more.")
             return
     if(response == START):
         print("Game is starting.")
+        return
     if(response == WAIT and isChallenger):
         print("Wait for game to begin.")
+        return
     if(response == WAIT and not isChallenger):
         print("Wait for opponent to make a move.")
+        return
     else:
         isChallenger = False
     if(response == OK):
         print("Make a move.")
+        return
     tokenized = response.split()
     token = tokenized[0] + " " + tokenized[1]
     if(token == NAME):
         print("Your opponent's login ID is: " + tokenized[2])
+        return
     if(token == DISPLAY):
         tokenized = response.split(' ', 2)
         print(tokenized[2])
+        return
     if(response == GO):
         print("Make a move.")
+        return
+    if(response == LEFT):
+        print("Your opponent left the game. Sorry about that. You are now back in the lobby.")
 
 
 #Main function that initiates the client
