@@ -31,6 +31,7 @@ ERROR = "400 ERROR"
 
 # Global variables
 playerList = []
+localPlayerList = []
 nameList = []
 gameList = []
 totalGames = 0
@@ -43,8 +44,9 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
     def handle(self):
 
         # Reference the global variables that need to be shared
-        global nameList
         global playerList
+        global localPlayerList
+        global nameList
         global gameList
         global totalGames
         global playerExited
@@ -52,7 +54,6 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
         # Local variables to each thread/client
         localGameID = -1
-        localGamePlayers = []
         lobbyLoop = True
         exitLobbyLoop = True
         killThread = False
@@ -200,8 +201,8 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                     foundOpposing = False
                     for eachPlayer in playerList:
                         if oppName == eachPlayer.getName() and oppName != player.getName():
-                            localGamePlayers.append(player)
-                            localGamePlayers.append(eachPlayer)
+                            localPlayerList.append(eachPlayer)
+                            localPlayerList.append(player)
                             player.setPiece("X")
                             player.setIsTurn(True)
                             foundOpposing = True
@@ -249,10 +250,11 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
             totalGames += 1
             localGame.setGameID(totalGames)
             localGame.createBoard()
-            for eachPlayer in localGamePlayers:
-                if eachPlayer not in localGame.getPlayerList():
-                    print("Adding " + eachPlayer.getName() + " to local game " + str(localGame.getGameID()))                          ### 
-                    localGame.addPlayer(eachPlayer)
+            print("got here")
+            for eachPlayer in localPlayerList:
+                print("Adding " + eachPlayer.getName() + " to local game " + str(localGame.getGameID()))                          ###
+                localGame.addPlayer(eachPlayer)
+            localPlayerList = []
             gameList.append(localGame)
             playerWaiting = False
             sleep(0.1)
