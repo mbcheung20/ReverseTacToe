@@ -360,7 +360,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                                     player.setPiece("X")
                                     player.setIsTurn(True)
                                     foundOpposing = True
-                                    lobbyLoop = False
+                                    exitLobbyLoop = False
                                     sleep(0.1)
                                     self.request.send(OK.encode())
                                     oppSocket = eachPlayer.getConnSocket()
@@ -373,7 +373,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                         elif tokenized[0] == "200":
                             player.setPiece("O")
                             player.setIsTurn(False)
-                            lobbyLoop = False
+                            exitLobbyLoop = False
                             sleep(0.1)
                             self.request.send(OK.encode())
 
@@ -392,7 +392,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                 if player.getPiece() == "X":
                     sleep(0.1)
                     self.request.send(WAIT.encode())
-                    while waitingOnGame == True:
+                    while player.getWaitingOnGame() == True:
                         pass
 
                 # Set up the game
@@ -401,11 +401,16 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                     totalGames += 1
                     localGame.setGameID(totalGames)
                     localGame.createBoard()
-                    for eachPlayer in playerList:
-                        if eachPlayer not in localGame.getPlayerList():
-                            localGame.addPlayer(eachPlayer)
+                    opposingPlayer = None
+                    for eachPlayer in localPlayerList:
+                        if eachPlayer == player:
+                            pass
+                        else:
+                            opposingPlayer = eachPlayer
+                        localGame.addPlayer(eachPlayer)
+                    localPlayerList = []
                     gameList.append(localGame)
-                    waitingOnGame = False
+                    opposingPlayer.setWaitingOnGame(False)
                     sleep(0.1)
 
                 # Get the local game's ID on both clients
@@ -436,9 +441,6 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
                 # Remove the players from the active players list
                 playerList.remove(player)
-
-                # Tell player that the game is starting
-                self.request.send(START.encode())
 
             # Send the players the visualization of the board
             boardDisplay = localGame.displayBoard()
