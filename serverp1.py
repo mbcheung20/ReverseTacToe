@@ -47,13 +47,13 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
         # Create a variable that allows us to reach the end of the control flow
         killThread = False
 
-        # Accept incoming connections
-        print("Connection from IP: " + self.client_address[0] + " accepted.")
-        sleep(0.1)
-        self.request.send(OK.encode())
-
         # If we don't have two players, attempt to add them to the game
         if len(playerList) < 2:
+
+            # Accept incoming connections
+            print("Connection from IP: " + self.client_address[0] + " accepted.")
+            sleep(0.1)
+            self.request.send(OK.encode())
 
             # Create temporary variables
             name = ""
@@ -155,6 +155,10 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
             # Set the game as active
             game.setIsActive(True)
+
+        else:
+            self.request.send(ERROR.encode())
+            return
 
         # While there is a game active, loop
         while game.getIsActive() == True:
