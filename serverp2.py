@@ -357,6 +357,8 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                             foundOpposing = False
                             for eachPlayer in playerList:
                                 if oppName == eachPlayer.getName() and oppName != player.getName():
+                                    localPlayerList.append(eachPlayer)
+                                    localPlayerList.append(player)
                                     player.setPiece("X")
                                     player.setIsTurn(True)
                                     foundOpposing = True
