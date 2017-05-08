@@ -26,6 +26,7 @@ DISPLAY = "221 DISPLAY"
 ERROR = "400 ERROR"
 
 # Global variables
+connections = 0
 playerList = []
 nameList = []
 playerWaiting = True
@@ -38,6 +39,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
     def handle(self):
 
         # Reference the global variables that need to be shared
+        global connections
         global nameList
         global playerList
         global playerExited
@@ -48,12 +50,13 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
         killThread = False
 
         # If we don't have two players, attempt to add them to the game
-        if len(playerList) < 2:
+        if connections < 2:
 
             # Accept incoming connections
             print("Connection from IP: " + self.client_address[0] + " accepted.")
             sleep(0.1)
             self.request.send(OK.encode())
+            connections += 1
 
             # Create temporary variables
             name = ""
@@ -90,6 +93,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                     elif tokenized[0] == EXIT:
                         sleep(0.1)
                         self.request.send(OK.encode())
+                        connections -= 1
                         killThread = True
                         break
 
@@ -194,9 +198,17 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
             # If the game was a tie, notify the players and restart the game
             if gameLoser == "TIE":
-                sleep(0.1)
+                playerPiece = player.getPiece()
+
+                # Update turns for the next game
+                if playerPiece == "X":
+                    player.setIsTurn(True)
+                else:
+                    player.setIsTurn(False)
+                    game.createBoard()
+
+                sleep(0.2)
                 self.request.send(TIED.encode())
-                game.createBoard()
                 sleep(0.1)
                 self.request.send(START.encode())
                 newDisplay = game.displayBoard()
@@ -274,6 +286,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
                             playerExited = True
                             playerWaiting = False
                             killThread = True
+                            connections -= 1
                             sleep(0.2)
 
                         # Handle other requests
