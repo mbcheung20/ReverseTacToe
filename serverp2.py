@@ -2,7 +2,7 @@
 #Date: 5/7/17
 #Purpose: CSE 310 Final Project Server
 
-#This code satisfies part 1.
+#This code satisfies part 2.
 
 # Imports
 import socketserver
