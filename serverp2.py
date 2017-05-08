@@ -35,7 +35,6 @@ localPlayerList = []
 nameList = []
 gameList = []
 totalGames = 0
-waitingOnGame = True
 
 class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
@@ -48,7 +47,6 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
         global nameList
         global gameList
         global totalGames
-        global waitingOnGame
 
         # Local variables to each thread/client
         localGameID = -1
@@ -239,7 +237,7 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
         if player.getPiece() == "X":
             sleep(0.1)
             self.request.send(WAIT.encode())
-            while waitingOnGame == True:
+            while player.getWaitingOnGame() == True:
                 pass
 
         # Set up the game
@@ -248,13 +246,16 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
             totalGames += 1
             localGame.setGameID(totalGames)
             localGame.createBoard()
-            print("got here")
+            opposingPlayer = None
             for eachPlayer in localPlayerList:
-                print("Adding " + eachPlayer.getName() + " to local game " + str(localGame.getGameID()))                          ###
+                if eachPlayer == player:
+                    pass
+                else:
+                    opposingPlayer = eachPlayer
                 localGame.addPlayer(eachPlayer)
             localPlayerList = []
             gameList.append(localGame)
-            waitingOnGame = False
+            opposingPlayer.setWaitingOnGame(False)
             sleep(0.1)
 
         # Get the local game's ID on both clients
@@ -590,6 +591,7 @@ class Player:
     state = ""
     piece = ""
     isTurn = False
+    waitingOnGame = True
 
     # Constructor
     '''
@@ -617,6 +619,9 @@ class Player:
     def getIsTurn(self):
         return self.isTurn
 
+    def getWaitingOnGame(self):
+        return self.waitingOnGame
+
     # Setters
     def setConnSocket(self, connSocket):
         self.connSocket = connSocket
@@ -632,6 +637,9 @@ class Player:
 
     def setIsTurn(self, isTurn):
         self.isTurn = isTurn
+
+    def setWaitingOnGame(self, waitingOnGame):
+        self.waitingOnGame = waitingOnGame
 
 #Represents a game of modified tic tac toe
 class Game:
