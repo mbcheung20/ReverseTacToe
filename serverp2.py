@@ -283,9 +283,6 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
         # Remove the players from the active players list
         playerList.remove(player)
 
-        # Tell players that the game is starting
-        self.request.send(START.encode())
-
         if killThread == True:
             return
 
