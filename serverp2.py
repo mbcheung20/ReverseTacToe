@@ -532,9 +532,9 @@ class ThreadedTCPHandler(socketserver.BaseRequestHandler):
 
                         # Handle exit requests
                         elif (tokenized[0] == EXIT):
+                            nameList.remove(player.getName())
                             sleep(0.1)
                             self.request.send(OK.encode())
-                            nameList.remove(player.getName())
                             localGame.removePlayer(player)
                             localGame.setPlayerExited(True)
                             localGame.setPlayerWaiting(False)
